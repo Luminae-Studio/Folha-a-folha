@@ -1,0 +1,32 @@
+{
+  "name": "Folha a Folha",
+  "short_name": "Folha a Folha",
+  "description": "Seu app de leitura e escrita literária",
+  "id": "/Folha-a-folha/",
+  "start_url": "/Folha-a-folha/",
+  "scope": "/Folha-a-folha/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F0A1A",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

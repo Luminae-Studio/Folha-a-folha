@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Folha a Folha">
+<meta name="theme-color" id="theme-color-meta" content="#A855F7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Folha a Folha">
+<meta name="description" content="Seu app de leitura e escrita literária">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACNUlEQVR42u3YsRWAMAhAQcZxIcdwr6zkJJba2acwT+B4f4JwBRqxfMZ+6aOiw1gzQAABBBBAAAkgAQQQQAABBJAAEkAAAQQQQAABBJAAAggggAACCCCABBBAAAEEEEAAASSABBBAAAEEEEACSAABBBBAAAEEEEACCCCAAAIIIIAAEkAAAQQQQAABVHydx3a+3Q0mPVmAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIoElAf35cgAACCCCAAHIDAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAWf5EAwQQQAABBJAbCCCAAAIIIIAAAsgRDRBAAAEEkBvIDQQQQAABBBBAAAEEEEC+wgACCCCAAHIDuYEAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAgggtQ0gASSABJAAkgASQAJIAEkACSABJIAkgASQAFIhQOvHo5daJ0AAASSABBBAAAEEEEAAASSAAAIIIIAAAgggAQQQQAABBBBAAAkgAQQQQAABBJAAEkAAAQQQQAABBJAAAggggAACCCCABBBAAAEEEEAAASSAAAIIIIAAAgggAaTsgB5vF+qV0l+oOQAAAABJRU5ErkJggg==">
+<link rel="icon" href="/Folha-a-folha/favicon.ico">
+<link rel="manifest" href="/Folha-a-folha/manifest.json">
+
+<title>Folha a Folha</title>
+
+<link rel="stylesheet" href="css/style.css">
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
+/* ── Login Screen ────────────────────────────────────── */
+#login-screen,#loading-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:99999;
+}
+.login-card{
+  display:flex;flex-direction:column;align-items:center;
+  padding:40px 32px;max-width:340px;width:90%;
+  background:var(--surf);border:1px solid var(--bord);
+  border-radius:24px;box-shadow:0 8px 40px rgba(168,85,247,.12);
+  text-align:center;
+}
+.login-logo{font-size:56px;margin-bottom:12px;line-height:1;}
+.login-title{font-size:28px;font-weight:800;color:var(--txt);margin:0 0 6px;}
+.login-sub{font-size:13px;color:var(--txt2);margin:0 0 28px;}
+.login-btn-google{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 24px;border-radius:12px;
+  background:#fff;border:1.5px solid #e0e0e0;
+  font-size:14px;font-weight:600;color:#333;
+  cursor:pointer;width:100%;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  transition:box-shadow .15s,transform .1s;
+}
+.login-btn-google:hover{box-shadow:0 4px 16px rgba(0,0,0,.13);transform:translateY(-1px);}
+.login-btn-google:active{transform:translateY(0);}
+.login-note{font-size:11px;color:var(--txt3);margin:20px 0 0;line-height:1.6;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loading-screen>div{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── Logout button in drawer ─────────────────────────── */
+.di-logout{color:var(--rd,#ef4444)!important;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="scr">
+
+<!-- ══ INÍCIO ══════════════════════════════════════════ -->
+<div id="pg-inicio" class="pg on">
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:18px;">
+    <div class="pav" id="av" onclick="editProfile()">
+      <div id="av-ph">📚</div>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:1px;">Bem-vinda de volta,</div>
+      <div id="pn" class="serif" style="font-size:19px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Leitora</div>
+      <div style="font-size:11px;color:var(--txt2);margin-top:2px;">📖 <span id="pr" style="color:var(--li);font-weight:500;">—</span></div>
+    </div>
+    <button class="btn bg2 bs" onclick="editProfile()">✏️</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+    <button onclick="iniYear(-1)" style="padding:3px 10px;border-radius:6px;background:var(--surf2);border:1px solid var(--bord);font-size:16px;color:var(--txt2);">‹</button>
+    <span id="i-year-n" style="font-size:14px;font-weight:700;color:var(--txt2);min-width:36px;text-align:center;"></span>
+    <button onclick="iniYear(1)" style="padding:3px 10px;border-radius:6px;background:var(--surf2);border:1px solid var(--bord);font-size:16px;color:var(--txt2);">›</button>
+    <span style="font-size:10px;color:var(--txt3);">ano</span>
+  </div>
+  <div class="sg">
+    <div class="card sc"><div class="sn" style="color:var(--co)" id="i-lidos">0</div><div class="sl">Livros lidos</div></div>
+    <div class="card sc"><div class="sn" style="color:var(--te)" id="i-pag">0</div><div class="sl">Páginas no ano</div></div>
+    <div class="card sc"><div class="sn" style="color:var(--li)" id="i-esc">0</div><div class="sl">Obras escritas</div></div>
+    <div class="card sc"><div class="sn" style="color:var(--am)" id="i-meta">—</div><div class="sl">Meta do ano</div></div>
+  </div>
+  <div class="card mb">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">📖 Lendo agora</div>
+    <div id="i-lendo"><div style="font-size:12px;color:var(--txt3);text-align:center;padding:10px;">Nenhum livro em andamento</div></div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">⏱️ Hoje</div>
+    <div class="tmr" id="i-tmr" style="font-size:34px;">00:00:00</div>
+    <div style="text-align:center;font-size:11px;color:var(--txt2);margin-top:3px;"><span id="i-total">0</span> min lidos hoje</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button class="btn bp bs" onclick="startTimer()">▶</button>
+      <button class="btn bg2 bs" onclick="stopTimer()">⏸</button>
+      <button class="btn bg2 bs" onclick="resetTimer()">↺</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ESTANTES ═════════════════════════════════════════ -->
+<div id="pg-estantes" class="pg">
+  <div class="ph">
+    <div><h2>Estantes</h2></div>
+    <button class="btn bp bs" onclick="openAddBook()">+ Livro</button>
+  </div>
+  <div class="tabs" id="sh-tabs">
+    <button class="tab on" onclick="switchShelf(this,'todos')">Todos</button>
+    <button class="tab" onclick="switchShelf(this,'nao-lidos')">Não lidos</button>
+    <button class="tab" onclick="switchShelf(this,'lidos')">✅ Lidos</button>
+    <button class="tab" onclick="switchShelf(this,'fisico')">📗 Físico</button>
+    <button class="tab" onclick="switchShelf(this,'pdf')">📄 PDF</button>
+    <button class="tab" onclick="switchShelf(this,'kindle')">📱 Kindle</button>
+    <button class="tab" onclick="switchShelf(this,'wattpad')">🌐 Wattpad</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <input type="search" id="sh-search" placeholder="🔍 Buscar..." oninput="renderShelf()" style="flex:1;padding:9px 12px;border:1.5px solid var(--bord);border-radius:var(--rs);background:var(--surf2);color:var(--txt);font-size:16px;">
+    <select id="sh-sort" onchange="renderShelf()" style="padding:9px 10px;border:1.5px solid var(--bord);border-radius:var(--rs);background:var(--surf2);color:var(--txt);font-size:13px;font-weight:500;-webkit-appearance:none;appearance:none;cursor:pointer;min-width:100px;">
+      <option value="recente">Recentes</option>
+      <option value="titulo-az">Título A→Z</option>
+      <option value="titulo-za">Título Z→A</option>
+      <option value="autor-az">Autor A→Z</option>
+      <option value="autor-za">Autor Z→A</option>
+      <option value="avaliacao">⭐ Avaliação</option>
+      <option value="progresso">📖 Progresso</option>
+    </select>
+  </div>
+  <div id="sh-count" style="font-size:11px;color:var(--txt3);margin-bottom:10px;"></div>
+  <div id="sh-grid" class="bg"></div>
+</div>
+
+<!-- ══ LENDO ════════════════════════════════════════════ -->
+<div id="pg-lendo" class="pg">
+  <div class="ph">
+    <div><h2>Lendo Agora</h2></div>
+    <button class="btn bp bs" onclick="openAddBook('lendo')">+</button>
+  </div>
+  <div id="lendo-list"></div>
+</div>
+
+<!-- ══ ESCRITORA ════════════════════════════════════════ -->
+<div id="pg-escritora" class="pg">
+  <div class="ph"><div><h2 class="serif">✍️ Escritora</h2></div></div>
+  <div class="tabs" id="wr-tabs">
+    <button class="tab on" onclick="wrTab(this,'ms')">📝 Manuscritos</button>
+    <button class="tab" onclick="wrTab(this,'co')">🏆 Concursos</button>
+    <button class="tab" onclick="wrTab(this,'pu')">📰 Publicações</button>
+    <button class="tab" onclick="wrTab(this,'id')">💡 Ideias</button>
+    <button class="tab" onclick="wrTab(this,'ro')">🗓️ Rotina</button>
+    <button class="tab" onclick="wrTab(this,'dc')">🎯 Desafios</button>
+  </div>
+  <div id="wt-ms"><button class="btn bp bs mb" onclick="openModal('mod-ms')">+ Nova obra</button><div id="ms-list"></div></div>
+  <div id="wt-co" style="display:none;"><button class="btn bp bs mb" onclick="openNewCon()">+ Concurso</button><div class="card mb"><div class="cal-g" id="cal-h2"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><button class="btn bg2 bs" onclick="calPrev()">‹</button><span id="cal-title" style="font-size:14px;font-weight:600;"></span><button class="btn bg2 bs" onclick="calNext()">›</button></div><div class="cal-g" id="cal-days"></div></div><div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px;">Lista de concursos</div><div id="co-list"></div></div></div>
+  <div id="wt-pu" style="display:none;"><button class="btn bp bs mb" onclick="openModal('mod-pu')">+ Publicação</button><div id="pu-list" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div></div>
+  <div id="wt-id" style="display:none;"><button class="btn bp bs mb" onclick="openModal('mod-id')">+ Ideia</button><div id="id-list"></div></div>
+  <div id="wt-ro" style="display:none;">
+    <div class="sg mb">
+      <div class="card sc"><div class="sn" style="font-size:22px;color:var(--li);" id="ro-hj">0</div><div class="sl">palavras hoje</div></div>
+      <div class="card sc"><div class="sn" style="font-size:22px;color:var(--mi);" id="ro-tot">0</div><div class="sl">total palavras</div></div>
+    </div>
+    <div class="card mb">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:600;">Meta diária</span>
+        <span style="font-size:20px;font-weight:700;color:var(--li);" id="ro-meta-n">500</span>
+      </div>
+      <input type="range" min="100" max="5000" step="100" value="500" id="ro-range" oninput="updRotMeta(this.value)" style="width:100%;">
+    </div>
+    <div class="card mb">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Esta semana</div>
+      <div style="display:flex;align-items:flex-end;gap:5px;height:70px;" id="ro-chart"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Registrar sessão</div>
+      <div class="fr mb">
+        <div class="fg" style="margin:0;"><label>Palavras</label><input type="number" id="ro-words" placeholder="750"></div>
+        <div class="fg" style="margin:0;"><label>Projeto</label><input type="text" id="ro-proj" placeholder="Título..."></div>
+      </div>
+      <button class="btn bp bs" onclick="saveRotina()">Registrar</button>
+    </div>
+  </div>
+  <div id="wt-dc" style="display:none;">
+    <div class="ys">
+      <button onclick="dcYear(-1)">‹</button>
+      <span id="dc-year-n">2026</span>
+      <button onclick="dcYear(1)">›</button>
+      <span style="font-size:11px;color:var(--txt3);">ano dos desafios</span>
+    </div>
+    <!-- Streak -->
+    <div class="card mb">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">🔥 Streak de escrita diária</div>
+      <div class="streak-num" id="dc-streak">0</div>
+      <div style="text-align:center;font-size:11px;color:var(--txt2);margin-top:4px;">dias consecutivos</div>
+      <div style="text-align:center;margin-top:10px;"><button class="btn bp bs" onclick="markToday()">✓ Escrevi hoje</button></div>
+    </div>
+    <!-- Desafio gêneros -->
+    <div class="card mb">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;">🎭 Desafio dos 12 Gêneros</div>
+      <div id="dc-generos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    </div>
+    <!-- Prompts semanais -->
+    <div class="card mb">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">✏️ Prompts Semanais</div>
+      <div class="prompt-card">
+        <div style="font-size:10px;font-weight:600;color:var(--li-d);margin-bottom:6px;">SEMANA <span id="dc-week-num"></span></div>
+        <div style="font-size:14px;font-weight:600;line-height:1.5;" id="dc-prompt-text"></div>
+      </div>
+      <div id="dc-prompts-list"></div>
+      <button class="btn bp bs" style="margin-top:8px;" onclick="openModal('mod-prompt')">+ Registrar resposta</button>
+    </div>
+    <!-- Submissões -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:600;">📮 Submissões ao ano</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--txt2);">Meta:</span>
+          <input type="number" id="dc-sub-meta" value="5" min="1" max="50" style="width:50px;padding:4px 8px;border:1.5px solid var(--bord);border-radius:6px;background:var(--surf2);font-size:13px;font-weight:600;text-align:center;" oninput="saveDcSubMeta()">
+        </div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:4px;">
+          <span id="dc-sub-count">0 submetidas</span><span id="dc-sub-pct">0%</span>
+        </div>
+        <div class="pw"><div class="pb" id="dc-sub-bar" style="background:var(--li);width:0%;"></div></div>
+      </div>
+      <div style="font-size:11px;color:var(--txt3);">As submissões são contadas automaticamente dos seus concursos com status "inscrito" ou superior.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DESAFIOS LEITURA ══════════════════════════════════ -->
+<div id="pg-desafios" class="pg">
+  <div class="ph"><div><h2>Desafios</h2><p>Leitura & conquistas</p></div></div>
+  <div class="ys">
+    <button onclick="rdYear(-1)">‹</button>
+    <span id="rd-year-n">2026</span>
+    <button onclick="rdYear(1)">›</button>
+  </div>
+  <!-- A-Z -->
+  <div class="card mb">
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px;">🔤 Desafio A–Z</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:14px;">Complete o alfabeto com livros finalizados — um por letra do título</div>
+    <div id="az-prog-wrap" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);margin-bottom:4px;"><span id="az-count">0/26 letras</span><span id="az-pct">0%</span></div>
+      <div class="pw"><div class="pb" id="az-bar" style="background:var(--li);"></div></div>
+    </div>
+    <div class="az-grid" id="az-grid"></div>
+  </div>
+  <!-- Álbum -->
+  <div class="card mb">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="font-size:14px;font-weight:700;">🏅 Álbum de Conquistas</div>
+      <span id="album-count" style="font-size:11px;font-weight:600;color:var(--li);"></span>
+    </div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:14px;">Desbloqueie figurinhas cumprindo metas</div>
+    <div class="album" id="album-grid"></div>
+  </div>
+  <!-- Desafio Gêneros leitura -->
+  <div class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px;">📚 Desafio de Gêneros</div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:14px;">Leia ao menos 1 livro de cada gênero no ano</div>
+    <div id="rd-generos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+  </div>
+</div>
+
+<!-- ══ EXTRAS (drawer pages) ════════════════════════════ -->
+<div id="pg-comprar" class="pg">
+  <div class="ph"><div><h2>Lista de Compras</h2></div><button class="btn bp bs" onclick="openWish()">+</button></div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <input type="search" id="wish-search" placeholder="🔍 Buscar..." oninput="renderWish()" style="flex:1;padding:9px 12px;border:1.5px solid var(--bord);border-radius:var(--rs);background:var(--surf2);color:var(--txt);font-size:16px;">
+    <select id="wish-sort" onchange="renderWish()" style="padding:9px 10px;border:1.5px solid var(--bord);border-radius:var(--rs);background:var(--surf2);color:var(--txt);font-size:13px;font-weight:500;-webkit-appearance:none;appearance:none;cursor:pointer;min-width:100px;">
+      <option value="recente">Recentes</option>
+      <option value="titulo-az">Título A→Z</option>
+      <option value="titulo-za">Título Z→A</option>
+      <option value="autor-az">Autor A→Z</option>
+      <option value="autor-za">Autor Z→A</option>
+      <option value="categoria">Categoria</option>
+    </select>
+  </div>
+  <div id="wish-total" style="font-size:12px;color:var(--txt2);margin-bottom:10px;"></div>
+  <div id="wish-list"></div>
+</div>
+
+<div id="pg-estudo" class="pg">
+  <div class="ph"><div><h2>Livros de Estudo</h2></div><button class="btn bp bs" onclick="openStudy()">+</button></div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <input type="search" id="study-search" placeholder="🔍 Buscar..." oninput="renderStudy()" style="flex:1;padding:9px 12px;border:1.5px solid var(--bord);border-radius:var(--rs);background:var(--surf2);color:var(--txt);font-size:16px;">
+    <select id="study-sort" onchange="renderStudy()" style="padding:9px 10px;border:1.5px solid var(--bord);border-radius:var(--rs);background:var(--surf2);color:var(--txt);font-size:13px;font-weight:500;-webkit-appearance:none;appearance:none;cursor:pointer;min-width:100px;">
+      <option value="recente">Recentes</option>
+      <option value="titulo-az">Título A→Z</option>
+      <option value="titulo-za">Título Z→A</option>
+      <option value="autor-az">Autor A→Z</option>
+      <option value="autor-za">Autor Z→A</option>
+      <option value="status">Status</option>
+    </select>
+  </div>
+  <div id="st-list" class="card"></div>
+</div>
+
+<div id="pg-metas" class="pg">
+  <div class="ph"><div><h2>Metas</h2><p>Plantinhas 🌱</p></div><button class="btn bp bs" onclick="openModal('mod-meta')">+</button></div>
+  <div id="meta-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+</div>
+
+<div id="pg-sorteio" class="pg">
+  <div class="ph"><div><h2>Sorteio</h2></div></div>
+  <div class="card" style="text-align:center;padding:32px;margin-bottom:14px;cursor:pointer;" onclick="sortear()" id="sort-card">
+    <div style="font-size:56px;margin-bottom:12px;">🎲</div>
+    <div style="font-size:17px;font-weight:700;">Toque para sortear!</div>
+    <div style="font-size:12px;color:var(--txt2);margin-top:6px;">Um livro da fila será escolhido</div>
+  </div>
+  <div class="card card-sm">
+    <div style="font-size:12px;font-weight:600;margin-bottom:8px;">Filtrar:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;"><input type="checkbox" id="sf-f" checked>📗</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;"><input type="checkbox" id="sf-p" checked>📄</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;"><input type="checkbox" id="sf-k" checked>📱</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;"><input type="checkbox" id="sf-w" checked>🌐</label>
+    </div>
+  </div>
+</div>
+
+<div id="pg-tempo" class="pg">
+  <div class="ph"><div><h2>Tempo de Leitura</h2></div></div>
+  <div class="card" style="text-align:center;padding:26px;margin-bottom:14px;">
+    <div class="tmr" id="main-tmr">00:00:00</div>
+    <div style="font-size:11px;color:var(--txt2);margin-top:5px;">sessão atual</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;">
+      <button class="btn bp" onclick="startTimer()">▶</button>
+      <button class="btn bg2" onclick="stopTimer()">⏸</button>
+      <button class="btn bg2" onclick="saveSession()">💾 Salvar</button>
+    </div>
+  </div>
+  <div class="sg mb">
+    <div class="card sc"><div class="sn" style="font-size:20px;color:var(--li);" id="t-hj">0</div><div class="sl">min hoje</div></div>
+    <div class="card sc"><div class="sn" style="font-size:20px;color:var(--te);" id="t-sem">0</div><div class="sl">min semana</div></div>
+    <div class="card sc"><div class="sn" style="font-size:20px;color:var(--am);" id="t-mes">0</div><div class="sl">min mês</div></div>
+    <div class="card sc"><div class="sn" style="font-size:20px;color:var(--co);" id="t-tot">0</div><div class="sl">min total</div></div>
+  </div>
+  <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px;">Sessões recentes</div><div id="sess-list"></div></div>
+</div>
+
+<div id="pg-stats" class="pg">
+  <div class="ph"><div><h2>Estatísticas</h2></div></div>
+  <div class="ys"><button onclick="stYear(-1)">‹</button><span id="st-year-n">2026</span><button onclick="stYear(1)">›</button><span style="font-size:11px;color:var(--txt3);">ano</span></div>
+  <div class="sg mb">
+    <div class="card sc"><div class="sn" style="color:var(--co);" id="st-l">0</div><div class="sl">Lidos</div></div>
+    <div class="card sc"><div class="sn" style="color:var(--te);" id="st-p">0</div><div class="sl">Páginas</div></div>
+    <div class="card sc"><div class="sn" style="color:var(--li);" id="st-h">0h</div><div class="sl">Horas</div></div>
+    <div class="card sc"><div class="sn" style="color:var(--am);" id="st-r">—</div><div class="sl">Média ⭐</div></div>
+  </div>
+  <div class="card mb"><div style="font-size:13px;font-weight:600;margin-bottom:12px;">📚 Por formato</div><div id="st-fmt"></div></div>
+  <div class="card mb"><div style="font-size:13px;font-weight:600;margin-bottom:12px;">🏷️ Por gênero</div><div id="st-gen"></div></div>
+  <div class="card mb"><div style="font-size:13px;font-weight:600;margin-bottom:12px;">📅 Por mês</div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;" id="st-monthly"></div></div>
+  <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;">⭐ Top livros</div><div id="st-top"></div></div>
+</div>
+
+<div id="pg-frases" class="pg">
+  <div class="ph"><div><h2>Frases Marcantes</h2></div><button class="btn bp bs" onclick="openModal('mod-frase')">+</button></div>
+  <div id="frases-list"></div>
+</div>
+
+<div id="pg-diario" class="pg">
+  <div class="ph"><div><h2>Diário de Leitura</h2></div><button class="btn bp bs" onclick="openModal('mod-diario')">+</button></div>
+  <div id="diario-list" class="card"></div>
+</div>
+
+<div id="pg-emprestimos" class="pg">
+  <div class="ph"><div><h2>Empréstimos</h2></div><button class="btn bp bs" onclick="openModal('mod-emp')">+</button></div>
+  <div id="emp-list" class="card"></div>
+</div>
+
+</div><!-- /scr -->
+
+<!-- ── BOTTOM NAV ────────────────────────────────────── -->
+<nav id="bnav">
+  <button class="bn on" id="bn-inicio" onclick="go('inicio')"><span class="ico-wrap"><span class="ico">🏠</span></span><span>Início</span></button>
+  <button class="bn" id="bn-estantes" onclick="go('estantes')"><span class="ico-wrap"><span class="ico">📚</span></span><span>Estantes</span></button>
+  <button class="bn" id="bn-lendo" onclick="go('lendo')"><span class="ico-wrap"><span class="ico">📖</span></span><span>Lendo</span></button>
+  <button class="bn" id="bn-escritora" onclick="go('escritora')"><span class="ico-wrap"><span class="ico">✍️</span></span><span>Escritora</span></button>
+  <button class="bn" id="bn-mais" onclick="toggleDrawer()"><span class="ico-wrap"><span class="ico">☰</span></span><span>Mais</span></button>
+</nav>
+</div><!-- /app -->
+
+<!-- ── DRAWER ─────────────────────────────────────────── -->
+<div id="drawer-ov" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-handle"></div>
+  <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:1px;margin-bottom:4px;">MAIS SEÇÕES</div>
+  <div class="drawer-grid">
+    <button class="di" onclick="go('desafios');closeDrawer()"><span class="ico">🏅</span>Desafios</button>
+    <button class="di" onclick="go('comprar');closeDrawer()"><span class="ico">🛍️</span>Compras</button>
+    <button class="di" onclick="go('estudo');closeDrawer()"><span class="ico">🎓</span>Estudo</button>
+    <button class="di" onclick="go('metas');closeDrawer()"><span class="ico">🌱</span>Metas</button>
+    <button class="di" onclick="go('sorteio');closeDrawer()"><span class="ico">🎲</span>Sorteio</button>
+    <button class="di" onclick="go('tempo');closeDrawer()"><span class="ico">⏱️</span>Tempo</button>
+    <button class="di" onclick="go('stats');closeDrawer()"><span class="ico">📊</span>Stats</button>
+    <button class="di" onclick="go('frases');closeDrawer()"><span class="ico">💬</span>Frases</button>
+    <button class="di" onclick="go('diario');closeDrawer()"><span class="ico">📓</span>Diário</button>
+    <button class="di" onclick="go('emprestimos');closeDrawer()"><span class="ico">🤝</span>Emprest.</button>
+    <button class="di" id="theme-di" onclick="toggleTheme()"><span class="ico" id="theme-ico">🌙</span>Tema</button>
+    <button class="di" onclick="exportData();closeDrawer()"><span class="ico">💾</span>Exportar</button>
+    <button class="di" onclick="document.getElementById('imp-inp').click();closeDrawer()"><span class="ico">📂</span>Importar</button>
+    <button class="di di-logout" onclick="logout()"><span class="ico">🚪</span>Sair</button>
+  </div>
+  <input type="file" id="imp-inp" accept=".json" style="display:none;" onchange="importData(this)">
+</div>
+
+<!-- ══════════ MODALS ═══════════════════════════════════ -->
+
+<!-- Perfil -->
+<div class="mov" id="mod-profile">
+  <div class="mod"><div class="mh"></div><h3>Editar Perfil</h3>
+    <div class="fg"><label>Nome</label><input type="text" id="p-name"></div>
+    <div class="fg"><label>Lendo agora</label><input type="text" id="p-reading"></div>
+    <div class="fg"><label>Foto</label>
+      <div class="cup" style="max-width:70px;aspect-ratio:1/1;border-radius:50%;" onclick="document.getElementById('p-av-inp').click()">
+        <img id="p-av-prev" src="" style="display:none;border-radius:50%;"><div id="p-av-hint" style="font-size:20px;color:var(--txt3);">📷</div>
+      </div>
+      <input type="file" id="p-av-inp" accept="image/*" style="display:none;" onchange="prevImg(this,'p-av-prev','p-av-hint')">
+    </div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-profile')">Cancelar</button><button class="btn bp" onclick="saveProfile()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Livro -->
+<div class="mov" id="mod-book">
+  <div class="mod"><div class="mh"></div><h3>Adicionar Livro</h3>
+    <div style="display:flex;gap:14px;margin-bottom:12px;">
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;">Capa</div>
+        <div class="cup" onclick="document.getElementById('b-cov-inp').click()">
+          <img id="b-cov-prev" src="" style="display:none;">
+          <div id="b-cov-hint" style="display:flex;flex-direction:column;align-items:center;padding:8px;"><span style="font-size:22px;">📷</span><span style="font-size:9px;color:var(--txt3);text-align:center;margin-top:3px;">Toque para adicionar</span></div>
+        </div>
+        <input type="file" id="b-cov-inp" accept="image/*" style="display:none;" onchange="prevImg(this,'b-cov-prev','b-cov-hint')">
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="fg"><label>Título</label><input type="text" id="b-title"></div>
+        <div class="fg"><label>Autor</label><input type="text" id="b-author"></div>
+        <div class="fg"><label>Gênero</label><input type="text" id="b-genre" placeholder="ex: Romance, Fantasia..."></div>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Total páginas</label><input type="number" id="b-pages" placeholder="320"></div>
+      <div class="fg"><label>Pág. lidas</label><input type="number" id="b-read" placeholder="0"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Capítulo atual</label><input type="text" id="b-chapter" placeholder="ex: Cap. 12"></div>
+      <div class="fg"><label>Formato</label><select id="b-fmt"><option value="fisico">📗 Físico</option><option value="pdf">📄 PDF</option><option value="kindle">📱 Kindle</option><option value="wattpad">🌐 Wattpad</option></select></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Data de início</label><input type="date" id="b-started"></div>
+      <div class="fg"><label>Data de término</label><input type="date" id="b-finished"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Avaliação (0-5)</label><input type="number" id="b-rating" placeholder="0" min="0" max="5" step="0.5"></div>
+      <div class="fg"><label>Status</label><select id="b-status"><option value="fila">Na fila</option><option value="lendo">Lendo</option><option value="lido">Lido</option><option value="pausado">Pausado</option></select></div>
+    </div>
+    <div class="fg"><label>Tags (vírgula)</label><input type="text" id="b-tags" placeholder="relerei, favorito..."></div>
+    <div class="fg"><label>Resenha</label><textarea id="b-review"></textarea></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-book')">Cancelar</button><button class="btn bp" onclick="saveBook()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Progresso -->
+<div class="mov" id="mod-prog">
+  <div class="mod"><div class="mh"></div><h3>Atualizar Progresso</h3>
+    <input type="hidden" id="prog-id">
+    <div class="fr">
+      <div class="fg"><label>Páginas lidas</label><input type="number" id="prog-p"></div>
+      <div class="fg"><label>Capítulo atual</label><input type="text" id="prog-ch" placeholder="Cap. 12"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Avaliação (0-5)</label><input type="number" id="prog-r" min="0" max="5" step="0.5"></div>
+      <div class="fg"><label>Status</label><select id="prog-st"><option value="lendo">Lendo</option><option value="lido">Lido ✅</option><option value="pausado">Pausado</option><option value="fila">Na fila</option></select></div>
+    </div>
+    <div class="fg"><label>Resenha / Notas</label><textarea id="prog-rev"></textarea></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-prog')">Cancelar</button><button class="btn bp" onclick="saveProgress()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Wishlist -->
+<div class="mov" id="mod-wish">
+  <div class="mod"><div class="mh"></div><h3>Lista de Compras</h3>
+    <div class="fg"><label>Título</label><input type="text" id="w-title"></div>
+    <div class="fr">
+      <div class="fg"><label>Autor</label><input type="text" id="w-author"></div>
+      <div class="fg"><label>Preço est.</label><input type="text" id="w-price" placeholder="R$ 0,00"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Categoria</label><select id="w-cat"><option value="#A855F7">⭐ Prioridade</option><option value="#F472B6">✨ Bruxiles</option><option value="#34D399">🎮 Interativo</option><option value="#FBBF24">📚 Saga</option><option value="#38BDF8">🔖 SeCa</option></select></div>
+      <div class="fg"><label>Onde comprar</label><input type="text" id="w-where"></div>
+    </div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-wish')">Cancelar</button><button class="btn bp" onclick="saveWish()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Study -->
+<div class="mov" id="mod-st">
+  <div class="mod"><div class="mh"></div><h3>Livro de Estudo</h3>
+    <div class="fg"><label>Título</label><input type="text" id="st-t"></div>
+    <div class="fr">
+      <div class="fg"><label>Autor</label><input type="text" id="st-a"></div>
+      <div class="fg"><label>Área</label><input type="text" id="st-ar"></div>
+    </div>
+    <div class="fg"><label>Status</label><select id="st-s"><option value="estudando">Estudando</option><option value="quero">Quero estudar</option><option value="concluido">Concluído</option></select></div>
+    <div class="fg"><label>Notas</label><textarea id="st-n"></textarea></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-st')">Cancelar</button><button class="btn bp" onclick="saveStudy()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Meta -->
+<div class="mov" id="mod-meta">
+  <div class="mod"><div class="mh"></div><h3>Nova Meta</h3>
+    <div class="fg"><label>Descrição</label><input type="text" id="m-d" placeholder="ex: Ler 30 livros em 2026"></div>
+    <div class="fr">
+      <div class="fg"><label>Tipo</label><select id="m-t"><option value="livros">Livros/ano</option><option value="páginas">Páginas/mês</option><option value="minutos">Min/dia</option></select></div>
+      <div class="fg"><label>Meta</label><input type="number" id="m-g" placeholder="30"></div>
+    </div>
+    <div class="fg"><label>Progresso atual</label><input type="number" id="m-c" placeholder="0"></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-meta')">Cancelar</button><button class="btn bp" onclick="saveMeta()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Manuscrito -->
+<div class="mov" id="mod-ms">
+  <div class="mod"><div class="mh"></div><h3>Novo Manuscrito</h3>
+    <div class="fg"><label>Título</label><input type="text" id="ms-t"></div>
+    <div class="fr">
+      <div class="fg"><label>Gênero</label><input type="text" id="ms-g"></div>
+      <div class="fg"><label>Status</label><select id="ms-s"><option value="escrevendo">Escrevendo</option><option value="revisando">Revisando</option><option value="pausado">Pausado</option><option value="concluido">Concluído</option><option value="publicado">Publicado</option></select></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Meta palavras</label><input type="number" id="ms-wg" placeholder="80000"></div>
+      <div class="fg"><label>Palavras escritas</label><input type="number" id="ms-wc" placeholder="0"></div>
+    </div>
+    <div class="fg"><label>Sinopse</label><textarea id="ms-sy"></textarea></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-ms')">Cancelar</button><button class="btn bp" onclick="saveManus()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Concurso -->
+
+<!-- Concurso -->
+<div class="mov" id="mod-co">
+  <div class="mod">
+    <div class="mh"></div>
+    <h3 id="mod-co-title">Concurso Literário</h3>
+    <div class="fg"><label>Nome do concurso</label><input type="text" id="co-n"></div>
+    <div class="fr">
+      <div class="fg"><label>Organizador</label><input type="text" id="co-o"></div>
+      <div class="fg"><label>Status</label>
+        <select id="co-s">
+          <option value="interesse">Interesse</option>
+          <option value="inscrito">Inscrito</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="selecionado">Selecionado ✨</option>
+          <option value="nao-selecionado">Não selecionado</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Obra inscrita</label><input type="text" id="co-w"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Datas importantes</div>
+    <div class="fr">
+      <div class="fg"><label>📅 Prazo inscrição</label><input type="date" id="co-d"></div>
+      <div class="fg"><label>✏️ Fase de edição</label><input type="date" id="co-d2"></div>
+    </div>
+    <div class="fg"><label>🏆 Data do resultado</label><input type="date" id="co-d3">
+      <div style="font-size:10px;color:var(--txt3);margin-top:4px;">Deixe em branco se ainda não tem data definida</div>
+    </div>
+    <div class="fg"><label>Notas / anotações</label><textarea id="co-notes" style="min-height:100px;" placeholder="Regras, links, observações sobre as fases..."></textarea></div>
+    <div class="ma">
+      <button class="btn bg2" onclick="closeModal('mod-co')">Cancelar</button>
+      <button class="btn bp" onclick="saveCon()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detalhes do concurso -->
+<div class="mov" id="mod-co-det">
+  <div class="mod">
+    <div class="mh"></div>
+    <div id="co-det-content"></div>
+    <div class="ma" id="co-det-actions"></div>
+  </div>
+</div>
+
+
+<!-- Publicação -->
+<div class="mov" id="mod-pu">
+  <div class="mod"><div class="mh"></div><h3>Nova Publicação</h3>
+    <div class="fg"><label>Título</label><input type="text" id="pu-t"></div>
+    <div class="fr">
+      <div class="fg"><label>Onde</label><input type="text" id="pu-w"></div>
+      <div class="fg"><label>Data</label><input type="date" id="pu-d"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Tipo</label><select id="pu-ty"><option value="conto">Conto</option><option value="romance">Romance</option><option value="poesia">Poesia</option><option value="cronica">Crônica</option><option value="artigo">Artigo</option><option value="outro">Outro</option></select></div>
+      <div class="fg"><label>Link</label><input type="url" id="pu-l"></div>
+    </div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-pu')">Cancelar</button><button class="btn bp" onclick="savePub()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Ideia -->
+<div class="mov" id="mod-id">
+  <div class="mod"><div class="mh"></div><h3>Nova Ideia</h3>
+    <div class="fg"><label>Tag / título</label><input type="text" id="id-t"></div>
+    <div class="fg"><label>A ideia</label><textarea id="id-c" style="min-height:100px;"></textarea></div>
+    <div class="fr">
+      <div class="fg"><label>Gênero</label><input type="text" id="id-g"></div>
+      <div class="fg"><label>Cor</label><select id="id-cor"><option value="#F3E8FF">Lilás</option><option value="#CCFBF1">Verde água</option><option value="#FEF3C7">Amarelo</option><option value="#E0F2FE">Azul</option><option value="#FFE4E6">Rosa</option><option value="#D1FAE5">Menta</option></select></div>
+    </div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-id')">Cancelar</button><button class="btn bp" onclick="saveIdeia()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Frase -->
+<div class="mov" id="mod-frase">
+  <div class="mod"><div class="mh"></div><h3>Frase Marcante</h3>
+    <div class="fg"><label>Frase</label><textarea id="fr-t" style="min-height:90px;" placeholder="&quot;A frase que te marcou...&quot;"></textarea></div>
+    <div class="fr">
+      <div class="fg"><label>Livro</label><input type="text" id="fr-b" placeholder="Título do livro"></div>
+      <div class="fg"><label>Autor</label><input type="text" id="fr-a"></div>
+    </div>
+    <div class="fg"><label>Página</label><input type="number" id="fr-p" placeholder="ex: 142"></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-frase')">Cancelar</button><button class="btn bp" onclick="saveFrase()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Diário -->
+<div class="mov" id="mod-diario">
+  <div class="mod"><div class="mh"></div><h3>Entrada no Diário</h3>
+    <div class="fg"><label>Data</label><input type="date" id="di-d"></div>
+    <div class="fg"><label>Livro lido</label><input type="text" id="di-b" placeholder="(opcional)"></div>
+    <div class="fg"><label>Como foi sua leitura hoje?</label><textarea id="di-t" style="min-height:110px;" placeholder="Escreva livremente..."></textarea></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-diario')">Cancelar</button><button class="btn bp" onclick="saveDiario()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Empréstimo -->
+<div class="mov" id="mod-emp">
+  <div class="mod"><div class="mh"></div><h3>Empréstimo</h3>
+    <div class="fg"><label>Livro</label><input type="text" id="em-b" placeholder="Título do livro"></div>
+    <div class="fr">
+      <div class="fg"><label>Emprestado para</label><input type="text" id="em-p"></div>
+      <div class="fg"><label>Data</label><input type="date" id="em-d"></div>
+    </div>
+    <div class="fg"><label>Prazo de devolução</label><input type="date" id="em-dv"></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-emp')">Cancelar</button><button class="btn bp" onclick="saveEmp()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Prompt -->
+<div class="mov" id="mod-prompt">
+  <div class="mod"><div class="mh"></div><h3>Resposta ao Prompt</h3>
+    <div id="mod-prompt-show" style="font-size:13px;color:var(--txt2);background:var(--surf2);border-radius:var(--rs);padding:12px;margin-bottom:12px;"></div>
+    <div class="fg"><label>Sua resposta / resumo</label><textarea id="pr-t" style="min-height:100px;"></textarea></div>
+    <div class="fg"><label>Título da obra (se escreveu)</label><input type="text" id="pr-tit"></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-prompt')">Cancelar</button><button class="btn bp" onclick="savePromptResp()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Book detail -->
+<div class="mov" id="mod-bdet">
+  <div class="mod"><div class="mh"></div><div id="bdet-content"></div><div class="ma" id="bdet-actions"></div></div>
+</div>
+
+<!-- AZ letter -->
+<div class="mov" id="mod-az">
+  <div class="mod"><div class="mh"></div>
+    <h3>Letra <span id="az-letter-show"></span></h3>
+    <div id="az-book-list" style="margin-bottom:12px;"></div>
+    <div class="fg"><label>Vincular livro lido (título)</label><input type="text" id="az-book-inp" placeholder="Digite ou deixe vazio para desvincular"></div>
+    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-az')">Cancelar</button><button class="btn bp" onclick="saveAZ()">Salvar</button></div>
+  </div>
+</div>
+
+<script src="js/supabase.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/books.js"></script>
+<script src="js/extras.js"></script>
+<script src="js/writer.js"></script>
+<script src="js/app.js"></script>
+<script>initAuth();</script>
+</body>
+</html>
