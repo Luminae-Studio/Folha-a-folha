@@ -96,6 +96,10 @@ function openProg(id){
   const pnote=document.getElementById('prog-note');if(pnote)pnote.value='';
   openModal('mod-prog');
 }
+function _bumpMetaLivros(){
+  const ma=S.metas.find(m=>m.type==='livros');
+  if(ma&&ma.current<ma.goal){ma.current++;sv('metas');}
+}
 async function saveProgress(){
   const id=parseInt(document.getElementById('prog-id').value);
   const b=S.books.find(x=>x.id===id);if(!b)return;
@@ -106,12 +110,13 @@ async function saveProgress(){
   const pst=document.getElementById('prog-st');
   if(pst){
     const newStatus=pst.value;
-    if(newStatus==='lido'&&b.status!=='lido'){b.finishedAt=b.finishedAt||new Date().toISOString().split('T')[0];}
+    if(newStatus==='lido'&&b.status!=='lido'){b.finishedAt=b.finishedAt||new Date().toISOString().split('T')[0];_bumpMetaLivros();}
     if(newStatus!=='lido')b.finishedAt='';
     b.status=newStatus;
   } else if(b.pages>0&&b.read>=b.pages&&b.status!=='lido'){
     b.status='lido';
     b.finishedAt=b.finishedAt||new Date().toISOString().split('T')[0];
+    _bumpMetaLivros();
   }
   sv('books');
 
@@ -364,6 +369,15 @@ function iniYear(d){iniYearN+=d;renderInicio();}
 function renderInicio(){
   updateProfileUI();
   document.getElementById('i-year-n').textContent=iniYearN;
+  document.getElementById('i-ano-titulo').textContent=iniYearN;
+  renderFraseAno();
+  const addedThisYear=S.books.filter(b=>new Date(b.addedAt||b.createdAt).getFullYear()===iniYearN);
+  const lidosThisYear=addedThisYear.filter(b=>b.status==='lido');
+  document.getElementById('i-ano-count').textContent=`${lidosThisYear.length} lidos | ${addedThisYear.length} livros`;
+  const ac=document.getElementById('i-ano-capas');
+  ac.innerHTML=addedThisYear.length?addedThisYear.map(b=>`
+    <div class="lth" style="width:48px;flex-shrink:0;">${b.cover?`<img src="${b.cover}">`:`<div style="width:100%;height:100%;background:var(--li-l);display:flex;align-items:center;justify-content:center;font-size:14px;">${fmtE(b.format)}</div>`}</div>
+  `).join(''):'<div style="font-size:11px;color:var(--txt3);">Nenhum livro adicionado este ano</div>';
   const todosLidos=S.books.filter(b=>b.status==='lido');
   const lidos=todosLidos.filter(b=>new Date(b.finishedAt||b.addedAt).getFullYear()===iniYearN);
   document.getElementById('i-lidos').textContent=lidos.length;
@@ -383,4 +397,19 @@ function renderInicio(){
     </div>`).join('')
     :'<div style="font-size:12px;color:var(--txt3);text-align:center;padding:8px;">Nenhum livro em andamento</div>';
   renderTempo();
+}
+function renderFraseAno(){
+  const frase=DB.get('frase_ano');
+  const el=document.getElementById('i-ano-frase');
+  el.outerHTML=`<div id="i-ano-frase" style="font-size:12px;color:${frase?'var(--txt2)':'var(--txt3)'};margin-bottom:10px;cursor:pointer;" onclick="editFraseAno()">${frase?escapeHTML(frase):'Toque para escrever uma frase sobre este ano...'}</div>`;
+}
+function editFraseAno(){
+  const cur=DB.get('frase_ano')||'';
+  const el=document.getElementById('i-ano-frase');
+  el.outerHTML=`<input id="i-ano-frase" type="text" value="${escapeHTML(cur)}" placeholder="Escreva uma frase sobre este ano..." style="width:100%;font-size:12px;color:var(--txt2);background:var(--surf2);border:1px solid var(--bord);border-radius:8px;padding:6px 10px;margin-bottom:10px;outline:none;box-sizing:border-box;">`;
+  const inp=document.getElementById('i-ano-frase');
+  inp.focus();inp.select();
+  const save=()=>{DB.set('frase_ano',inp.value.trim());renderFraseAno();};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
+  inp.addEventListener('blur',save);
 }

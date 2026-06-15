@@ -89,18 +89,16 @@
     <div class="card sc"><div class="sn" style="color:var(--am)" id="i-meta">—</div><div class="sl">Meta do ano</div></div>
   </div>
   <div class="card mb">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">
+      <div class="serif" style="font-size:20px;font-weight:700;" id="i-ano-titulo"></div>
+      <div style="font-size:11px;color:var(--txt2);" id="i-ano-count"></div>
+    </div>
+    <div id="i-ano-frase" style="font-size:12px;color:var(--txt3);margin-bottom:10px;cursor:pointer;" onclick="editFraseAno()">Toque para escrever uma frase sobre este ano...</div>
+    <div id="i-ano-capas" style="display:flex;gap:8px;overflow-x:auto;"></div>
+  </div>
+  <div class="card mb">
     <div style="font-size:13px;font-weight:600;margin-bottom:10px;">📖 Lendo agora</div>
     <div id="i-lendo"><div style="font-size:12px;color:var(--txt3);text-align:center;padding:10px;">Nenhum livro em andamento</div></div>
-  </div>
-  <div class="card">
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">⏱️ Hoje</div>
-    <div class="tmr" id="i-tmr" style="font-size:34px;">00:00:00</div>
-    <div style="text-align:center;font-size:11px;color:var(--txt2);margin-top:3px;"><span id="i-total">0</span> min lidos hoje</div>
-    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-      <button class="btn bp bs" onclick="startTimer()">▶</button>
-      <button class="btn bg2 bs" onclick="stopTimer()">⏸</button>
-      <button class="btn bg2 bs" onclick="resetTimer()">↺</button>
-    </div>
   </div>
 </div>
 
