@@ -371,13 +371,13 @@ function renderInicio(){
   document.getElementById('i-year-n').textContent=iniYearN;
   document.getElementById('i-ano-titulo').textContent=iniYearN;
   renderFraseAno();
-  const addedThisYear=S.books.filter(b=>new Date(b.addedAt||b.createdAt).getFullYear()===iniYearN);
-  const lidosThisYear=addedThisYear.filter(b=>b.status==='lido');
-  document.getElementById('i-ano-count').textContent=`${lidosThisYear.length} lidos | ${addedThisYear.length} livros`;
+  const lidosNoAno=S.books.filter(b=>b.status==='lido'&&new Date(b.finishedAt||b.addedAt).getFullYear()===iniYearN);
+  const naEstante=S.books.filter(b=>new Date(b.addedAt||b.createdAt).getFullYear()===iniYearN);
+  document.getElementById('i-ano-count').textContent=`${lidosNoAno.length} lidos | ${naEstante.length} na estante`;
   const ac=document.getElementById('i-ano-capas');
-  ac.innerHTML=addedThisYear.length?addedThisYear.map(b=>`
+  ac.innerHTML=lidosNoAno.length?lidosNoAno.map(b=>`
     <div class="lth" style="width:48px;flex-shrink:0;">${b.cover?`<img src="${b.cover}">`:`<div style="width:100%;height:100%;background:var(--li-l);display:flex;align-items:center;justify-content:center;font-size:14px;">${fmtE(b.format)}</div>`}</div>
-  `).join(''):'<div style="font-size:11px;color:var(--txt3);">Nenhum livro adicionado este ano</div>';
+  `).join(''):'<div style="font-size:11px;color:var(--txt3);">Nenhum livro lido este ano</div>';
   const todosLidos=S.books.filter(b=>b.status==='lido');
   const lidos=todosLidos.filter(b=>new Date(b.finishedAt||b.addedAt).getFullYear()===iniYearN);
   document.getElementById('i-lidos').textContent=lidos.length;
@@ -399,17 +399,17 @@ function renderInicio(){
   renderTempo();
 }
 function renderFraseAno(){
-  const frase=DB.get('frase_ano');
+  const frase=DB.get('frase_ano_'+iniYearN);
   const el=document.getElementById('i-ano-frase');
   el.outerHTML=`<div id="i-ano-frase" style="font-size:12px;color:${frase?'var(--txt2)':'var(--txt3)'};margin-bottom:10px;cursor:pointer;" onclick="editFraseAno()">${frase?escapeHTML(frase):'Toque para escrever uma frase sobre este ano...'}</div>`;
 }
 function editFraseAno(){
-  const cur=DB.get('frase_ano')||'';
+  const cur=DB.get('frase_ano_'+iniYearN)||'';
   const el=document.getElementById('i-ano-frase');
   el.outerHTML=`<input id="i-ano-frase" type="text" value="${escapeHTML(cur)}" placeholder="Escreva uma frase sobre este ano..." style="width:100%;font-size:12px;color:var(--txt2);background:var(--surf2);border:1px solid var(--bord);border-radius:8px;padding:6px 10px;margin-bottom:10px;outline:none;box-sizing:border-box;">`;
   const inp=document.getElementById('i-ano-frase');
   inp.focus();inp.select();
-  const save=()=>{DB.set('frase_ano',inp.value.trim());renderFraseAno();};
+  const save=()=>{DB.set('frase_ano_'+iniYearN,inp.value.trim());renderFraseAno();};
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
   inp.addEventListener('blur',save);
 }
