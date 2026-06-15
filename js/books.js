@@ -92,9 +92,11 @@ function openProg(id){
   document.getElementById('prog-rev').value=b.review;
   const pch=document.getElementById('prog-ch');if(pch)pch.value=b.chapter||'';
   const pst=document.getElementById('prog-st');if(pst)pst.value=b.status||'lendo';
+  const pwhen=document.getElementById('prog-when');if(pwhen)pwhen.value=fmtDatetimeLocal(new Date());
+  const pnote=document.getElementById('prog-note');if(pnote)pnote.value='';
   openModal('mod-prog');
 }
-function saveProgress(){
+async function saveProgress(){
   const id=parseInt(document.getElementById('prog-id').value);
   const b=S.books.find(x=>x.id===id);if(!b)return;
   b.read=parseInt(document.getElementById('prog-p').value)||b.read;
@@ -111,7 +113,131 @@ function saveProgress(){
     b.status='lido';
     b.finishedAt=b.finishedAt||new Date().toISOString().split('T')[0];
   }
-  sv('books');closeModal('mod-prog');closeModal('mod-bdet');checkAlbum();renderPage(S.curPage);
+  sv('books');
+
+  // Registra check-in de leitura (histórico, não sobrescreve)
+  const pwhen=document.getElementById('prog-when');
+  const pnote=document.getElementById('prog-note');
+  const checkinAt=pwhen&&pwhen.value?new Date(pwhen.value).toISOString():new Date().toISOString();
+  await addCheckin(id,b.read,checkinAt,pnote?pnote.value.trim():'');
+
+  closeModal('mod-prog');closeModal('mod-bdet');checkAlbum();renderPage(S.curPage);
+}
+
+// ─── HELPERS DE DATA ────────────────────────────────────
+function fmtDatetimeLocal(d){
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fmtCheckinDate(iso){
+  if(!iso)return'';
+  const d=new Date(iso);
+  return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function escapeHTML(s){
+  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ─── HISTÓRICO DE CHECK-INS ─────────────────────────────
+async function renderCheckinHistory(bookId){
+  const el=document.getElementById('bdet-checkins');
+  if(!el)return;
+  el.innerHTML='<div style="font-size:11px;color:var(--txt3);">Carregando histórico...</div>';
+  const rows=await getCheckins(bookId);
+  if(!rows.length){el.innerHTML='<div style="font-size:11px;color:var(--txt3);">Nenhum check-in registrado ainda.</div>';return;}
+  el.innerHTML=rows.map(r=>`
+    <div class="diary-entry">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--txt2);margin-bottom:4px;">
+        <span>${fmtCheckinDate(r.checkin_at)}</span>
+        ${r.page!=null?`<span style="font-weight:700;color:var(--li);">pág. ${r.page}</span>`:''}
+      </div>
+      ${r.note?`<div style="font-size:12px;line-height:1.5;">${escapeHTML(r.note)}</div>`:''}
+    </div>`).join('');
+}
+
+// ─── ACHADOS / PREVISÕES ────────────────────────────────
+async function openFindings(bookId){
+  document.getElementById('mod-findings').dataset.bookId=bookId;
+  const b=S.books.find(x=>x.id===bookId);
+  document.getElementById('findings-book-title').textContent=b?b.title:'';
+  await renderFindingsList(bookId);
+  openModal('mod-findings');
+}
+async function renderFindingsList(bookId){
+  const el=document.getElementById('findings-list');
+  el.innerHTML='<div style="font-size:11px;color:var(--txt3);">Carregando...</div>';
+  const rows=await getFindings(bookId);
+  if(!rows.length){el.innerHTML='<div class="empty"><div class="ei">🔍</div><p style="font-size:12px;">Nenhum achado registrado ainda</p></div>';return;}
+  el.innerHTML=rows.map(f=>`
+    <div class="card card-sm mb" style="cursor:pointer;" onclick="openFindingThread('${f.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
+        <span class="bdg bv">pág. ${f.page!=null?f.page:'—'}</span>
+        <span style="font-size:10px;color:var(--txt3);">${fmtCheckinDate(f.created_at)}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.5;">${escapeHTML(f.content)}</div>
+    </div>`).join('');
+}
+function openNewFinding(){
+  document.getElementById('fnd-page').value='';
+  document.getElementById('fnd-content').value='';
+  openModal('mod-finding-new');
+}
+async function saveNewFinding(){
+  const bookId=parseInt(document.getElementById('mod-findings').dataset.bookId);
+  const pageVal=document.getElementById('fnd-page').value;
+  const page=pageVal?parseInt(pageVal):null;
+  const content=document.getElementById('fnd-content').value.trim();
+  if(!content)return;
+  await addFinding(bookId,page,content);
+  closeModal('mod-finding-new');
+  await renderFindingsList(bookId);
+}
+async function openFindingThread(findingId){
+  const bookId=parseInt(document.getElementById('mod-findings').dataset.bookId);
+  document.getElementById('mod-finding-thread').dataset.findingId=findingId;
+  document.getElementById('mod-finding-thread').dataset.bookId=bookId;
+  document.getElementById('fnr-page').value='';
+  document.getElementById('fnr-content').value='';
+  await renderFindingThread(findingId);
+  openModal('mod-finding-thread');
+}
+async function renderFindingThread(findingId){
+  const rootEl=document.getElementById('fnt-root');
+  const repliesEl=document.getElementById('fnt-replies');
+  rootEl.innerHTML='<div style="font-size:11px;color:var(--txt3);">Carregando...</div>';
+  repliesEl.innerHTML='';
+  const{root,replies}=await getFindingThread(findingId);
+  if(!root){rootEl.innerHTML='<div style="font-size:11px;color:var(--txt3);">Achado não encontrado.</div>';return;}
+  rootEl.innerHTML=`
+    <div class="card card-sm">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
+        <span class="bdg bv">pág. ${root.page!=null?root.page:'—'}</span>
+        <span style="font-size:10px;color:var(--txt3);">${fmtCheckinDate(root.created_at)}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.5;">${escapeHTML(root.content)}</div>
+    </div>`;
+  repliesEl.innerHTML=`
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;">Respostas</div>
+    ${replies.length?replies.map(r=>`
+      <div class="diary-entry">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);margin-bottom:4px;">
+          <span style="font-weight:700;color:var(--li);">pág. ${r.page!=null?r.page:'—'}</span>
+          <span>${fmtCheckinDate(r.created_at)}</span>
+        </div>
+        <div style="font-size:13px;line-height:1.5;">${escapeHTML(r.content)}</div>
+      </div>`).join(''):'<div style="font-size:11px;color:var(--txt3);">Nenhuma resposta ainda.</div>'}`;
+}
+async function saveFindingReply(){
+  const findingId=document.getElementById('mod-finding-thread').dataset.findingId;
+  const bookId=parseInt(document.getElementById('mod-finding-thread').dataset.bookId);
+  const pageVal=document.getElementById('fnr-page').value;
+  const page=pageVal?parseInt(pageVal):null;
+  const content=document.getElementById('fnr-content').value.trim();
+  if(!content)return;
+  await addFindingReply(findingId,bookId,page,content);
+  document.getElementById('fnr-page').value='';
+  document.getElementById('fnr-content').value='';
+  await renderFindingThread(findingId);
 }
 function delBook(id){S.books=S.books.filter(x=>x.id!==id);sv('books');closeModal('mod-bdet');renderPage(S.curPage);}
 function editBook(id){
@@ -157,6 +283,11 @@ function showBookDetail(id){
     ${b.review?`<div style="font-size:12px;color:var(--txt2);background:var(--surf2);border-radius:var(--rs);padding:10px;line-height:1.6;font-style:italic;">"${b.review}"</div>`:''}
     ${b.startedAt?`<div style="font-size:11px;color:var(--txt3);margin-top:8px;">📅 Iniciado em ${new Date(b.startedAt+'T12:00:00').toLocaleDateString('pt-BR')}</div>`:''}
     ${b.finishedAt?`<div style="font-size:11px;color:var(--txt3);margin-top:4px;">✅ Lido em ${new Date((b.finishedAt+'T12:00:00').substring(0,19)).toLocaleDateString('pt-BR')}</div>`:''}
+    <button class="btn bg2 bs" style="width:100%;justify-content:center;margin-top:14px;" onclick="openFindings(${id})">📌 Achados / Previsões</button>
+    <div style="margin-top:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📅 Histórico de check-ins</div>
+      <div id="bdet-checkins"></div>
+    </div>
   `;
   document.getElementById('bdet-actions').innerHTML=`
     <button class="btn bg2 bs" onclick="closeModal('mod-bdet')">Fechar</button>
@@ -165,6 +296,7 @@ function showBookDetail(id){
     <button class="btn bd bs" onclick="delBook(${id})">🗑️</button>
   `;
   openModal('mod-bdet');
+  renderCheckinHistory(id);
 }
 
 // ─── SHELF ──────────────────────────────────────────────

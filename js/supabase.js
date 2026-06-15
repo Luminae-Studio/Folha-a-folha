@@ -194,3 +194,88 @@ function _patchDB() {
   DB.set = function(k, v) { origSet(k, v); _scheduleSync(); };
   DB._patched = true;
 }
+
+// ════════════════════════════════════════════════════════
+// CHECK-INS DE LEITURA
+// ════════════════════════════════════════════════════════
+async function addCheckin(bookId, page, checkinAt, note) {
+  try {
+    const { error } = await getSB().from('reading_checkins').insert({
+      user_id: _user ? _user.id : null,
+      book_id: bookId,
+      page: page,
+      checkin_at: checkinAt,
+      note: note || null
+    });
+    if (error) console.warn('addCheckin:', error.message);
+    return !error;
+  } catch(e) { console.warn('addCheckin error', e); return false; }
+}
+
+async function getCheckins(bookId) {
+  try {
+    const { data, error } = await getSB()
+      .from('reading_checkins')
+      .select('*')
+      .eq('book_id', bookId)
+      .order('checkin_at', { ascending: true });
+    if (error) { console.warn('getCheckins:', error.message); return []; }
+    return data || [];
+  } catch(e) { console.warn('getCheckins error', e); return []; }
+}
+
+// ════════════════════════════════════════════════════════
+// ACHADOS / PREVISÕES
+// ════════════════════════════════════════════════════════
+async function addFinding(bookId, page, content) {
+  try {
+    const { error } = await getSB().from('book_findings').insert({
+      user_id: _user ? _user.id : null,
+      book_id: bookId,
+      parent_id: null,
+      page: page,
+      content: content
+    });
+    if (error) console.warn('addFinding:', error.message);
+    return !error;
+  } catch(e) { console.warn('addFinding error', e); return false; }
+}
+
+async function getFindings(bookId) {
+  try {
+    const { data, error } = await getSB()
+      .from('book_findings')
+      .select('*')
+      .eq('book_id', bookId)
+      .is('parent_id', null)
+      .order('created_at', { ascending: true });
+    if (error) { console.warn('getFindings:', error.message); return []; }
+    return data || [];
+  } catch(e) { console.warn('getFindings error', e); return []; }
+}
+
+async function addFindingReply(parentId, bookId, page, content) {
+  try {
+    const { error } = await getSB().from('book_findings').insert({
+      user_id: _user ? _user.id : null,
+      book_id: bookId,
+      parent_id: parentId,
+      page: page,
+      content: content
+    });
+    if (error) console.warn('addFindingReply:', error.message);
+    return !error;
+  } catch(e) { console.warn('addFindingReply error', e); return false; }
+}
+
+async function getFindingThread(findingId) {
+  try {
+    const [rootRes, repliesRes] = await Promise.all([
+      getSB().from('book_findings').select('*').eq('id', findingId).maybeSingle(),
+      getSB().from('book_findings').select('*').eq('parent_id', findingId).order('created_at', { ascending: true })
+    ]);
+    if (rootRes.error) console.warn('getFindingThread root:', rootRes.error.message);
+    if (repliesRes.error) console.warn('getFindingThread replies:', repliesRes.error.message);
+    return { root: rootRes.data || null, replies: repliesRes.data || [] };
+  } catch(e) { console.warn('getFindingThread error', e); return { root: null, replies: [] }; }
+}

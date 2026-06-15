@@ -117,6 +117,7 @@ function importData(inp){
 // ════════════════════════════════════════════════════════
 if ('serviceWorker' in navigator) {
   window.addEventListener('beforeinstallprompt', e => {
+    console.log('beforeinstallprompt disparou', e);
     e.preventDefault();
     window._installPrompt = e;
     showInstallBanner();
@@ -137,6 +138,7 @@ function showInstallBanner(){
   document.body.prepend(banner);
 }
 function installApp(){
+  console.log('_installPrompt vale:', window._installPrompt);
   if(window._installPrompt){
     window._installPrompt.prompt();
     window._installPrompt.userChoice.then(()=>{dismissInstall();window._installPrompt=null;});
