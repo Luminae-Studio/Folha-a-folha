@@ -96,10 +96,11 @@ function openProg(id){
   const pnote=document.getElementById('prog-note');if(pnote)pnote.value='';
   openModal('mod-prog');
 }
-function _bumpMetaLivros(){
-  const yr=new Date().getFullYear();
-  const ma=S.metas.find(m=>m.type==='livros'&&m.year===yr);
-  if(ma&&ma.current<ma.goal){ma.current++;sv('metas');}
+function syncMetasLivros(){
+  S.metas.filter(m=>m.type==='livros').forEach(m=>{
+    m.current=S.books.filter(b=>b.status==='lido'&&new Date(b.finishedAt||b.addedAt).getFullYear()===m.year).length;
+  });
+  sv('metas');
 }
 async function saveProgress(){
   const id=parseInt(document.getElementById('prog-id').value);
@@ -111,15 +112,15 @@ async function saveProgress(){
   const pst=document.getElementById('prog-st');
   if(pst){
     const newStatus=pst.value;
-    if(newStatus==='lido'&&b.status!=='lido'){b.finishedAt=b.finishedAt||new Date().toISOString().split('T')[0];_bumpMetaLivros();}
+    if(newStatus==='lido'&&b.status!=='lido'){b.finishedAt=b.finishedAt||new Date().toISOString().split('T')[0];}
     if(newStatus!=='lido')b.finishedAt='';
     b.status=newStatus;
   } else if(b.pages>0&&b.read>=b.pages&&b.status!=='lido'){
     b.status='lido';
     b.finishedAt=b.finishedAt||new Date().toISOString().split('T')[0];
-    _bumpMetaLivros();
   }
   sv('books');
+  syncMetasLivros();
 
   // Registra check-in de leitura (histórico, não sobrescreve)
   const pwhen=document.getElementById('prog-when');
