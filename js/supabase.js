@@ -118,6 +118,7 @@ async function _handleLogin(user) {
   _user = user;
   _showScreen('loading-screen');
   await _loadCloudData();
+  if (typeof migrateMetas === 'function') migrateMetas();
   _patchDB();
   _hideScreens();
   if (typeof updateProfileUI === 'function') updateProfileUI();
