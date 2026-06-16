@@ -267,7 +267,8 @@ function delSt(id){S.study=S.study.filter(function(x){return x.id!==id;});sv('st
 
 // METAS
 function saveMeta(){
-  S.metas.push({id:Date.now(),desc:document.getElementById('m-d').value,type:document.getElementById('m-t').value,goal:parseInt(document.getElementById('m-g').value)||1,current:parseInt(document.getElementById('m-c').value)||0});
+  var yr=parseInt(document.getElementById('m-y').value)||new Date().getFullYear();
+  S.metas.push({id:Date.now(),desc:document.getElementById('m-d').value,type:document.getElementById('m-t').value,goal:parseInt(document.getElementById('m-g').value)||1,current:parseInt(document.getElementById('m-c').value)||0,year:yr});
   sv('metas');closeModal('mod-meta');renderMetas();
 }
 function renderMetas(){
@@ -282,7 +283,7 @@ function renderMetas(){
       '<div class="pw" style="margin-bottom:4px;"><div class="pb" style="width:'+pct+'%;background:var(--mi)"></div></div>'+
       '<div style="font-size:10px;color:var(--txt3);margin-bottom:8px;">'+pct+'%</div>'+
       '<div style="display:flex;gap:5px;justify-content:center;">'+
-      '<button class="btn bp bx" onclick="incMeta('+m.id+')">+1</button>'+
+      (m.type!=='livros'?'<button class="btn bp bx" onclick="incMeta('+m.id+')">+1</button>':'')+
       '<button class="btn bd bx" onclick="delMeta('+m.id+')">&#x2715;</button>'+
       '</div></div>';
   }).join('');

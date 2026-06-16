@@ -97,7 +97,8 @@ function openProg(id){
   openModal('mod-prog');
 }
 function _bumpMetaLivros(){
-  const ma=S.metas.find(m=>m.type==='livros');
+  const yr=new Date().getFullYear();
+  const ma=S.metas.find(m=>m.type==='livros'&&m.year===yr);
   if(ma&&ma.current<ma.goal){ma.current++;sv('metas');}
 }
 async function saveProgress(){
@@ -383,7 +384,7 @@ function renderInicio(){
   document.getElementById('i-lidos').textContent=lidos.length;
   document.getElementById('i-pag').textContent=lidos.reduce((a,b)=>a+b.pages,0);
   document.getElementById('i-esc').textContent=S.manus.length;
-  const ma=S.metas.find(m=>m.type==='livros');
+  const ma=S.metas.find(m=>m.type==='livros'&&m.year===iniYearN);
   document.getElementById('i-meta').textContent=ma?Math.round(ma.current/ma.goal*100)+'%':'—';
   const lendo=S.books.filter(b=>b.status==='lendo');
   const il=document.getElementById('i-lendo');
