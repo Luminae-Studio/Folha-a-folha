@@ -414,3 +414,29 @@ function editFraseAno(){
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
   inp.addEventListener('blur',save);
 }
+
+async function recompressCovers(){
+  if(!confirm('Isso vai recomprimir todas as capas grandes. Pode levar alguns segundos. Continuar?'))return;
+  const candidates=S.books.filter(b=>b.cover&&b.cover.startsWith('data:image')&&b.cover.length>50000);
+  if(!candidates.length){alert('Nenhuma capa precisa de recompressão.');return;}
+  const before=candidates.reduce((a,b)=>a+b.cover.length,0);
+  await Promise.all(candidates.map(b=>new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=400;
+      const scale=img.width>MAX?MAX/img.width:1;
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale);
+      c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      b.cover=c.toDataURL('image/jpeg',0.7);
+      res();
+    };
+    img.onerror=()=>res();
+    img.src=b.cover;
+  })));
+  sv('books');
+  const after=candidates.reduce((a,b)=>a+b.cover.length,0);
+  const freed=Math.round((before-after)/1024);
+  alert(`${candidates.length} capa(s) recomprimida(s).\nEspaço liberado: ~${freed} KB`);
+}
