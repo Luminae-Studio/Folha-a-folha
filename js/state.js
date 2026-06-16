@@ -44,6 +44,15 @@ const S={
   curPage:  'inicio',
 };
 
+// Migração: garante que metas antigas sem "year" recebam o ano atual.
+// Definida aqui (state.js) para estar disponível antes de supabase.js e app.js.
+function migrateMetas(){
+  var changed=false;
+  var yr=new Date().getFullYear();
+  S.metas.forEach(function(m){if(!m.year){m.year=yr;changed=true;}});
+  if(changed)sv('metas');
+}
+
 // Apply saved theme on load
 (function(){
   if(S.theme==='dark'){
