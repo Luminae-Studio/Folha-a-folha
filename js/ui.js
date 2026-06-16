@@ -74,7 +74,23 @@ function prevImg(inp,prevId,hintId){
 }
 async function readImg(inp){
   const f=inp.files[0];if(!f)return'';
-  return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(f);});
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=400;
+        const scale=img.width>MAX?MAX/img.width:1;
+        const c=document.createElement('canvas');
+        c.width=Math.round(img.width*scale);
+        c.height=Math.round(img.height*scale);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        res(c.toDataURL('image/jpeg',0.7));
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(f);
+  });
 }
 
 // ════════════════════════════════════════════════════════

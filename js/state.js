@@ -3,7 +3,7 @@
 // ════════════════════════════════════════════════════════
 const DB={
   get(k){try{const v=localStorage.getItem('faf3_'+k);return v!==null?JSON.parse(v):null}catch{return null}},
-  set(k,v){try{localStorage.setItem('faf3_'+k,JSON.stringify(v))}catch{}}
+  set(k,v){try{localStorage.setItem('faf3_'+k,JSON.stringify(v))}catch(e){if(e&&e.name==='QuotaExceededError'||e&&e.code===22)alert('Armazenamento cheio — os dados não foram salvos. Tente remover capas de livros para liberar espaço.');else alert('Erro ao salvar dados: '+e);}}
 };
 function sv(k){DB.set(k,S[k]);}
 
