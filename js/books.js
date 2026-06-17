@@ -290,7 +290,6 @@ function showBookDetail(id){
     ${b.review?`<div style="font-size:12px;color:var(--txt2);background:var(--surf2);border-radius:var(--rs);padding:10px;line-height:1.6;font-style:italic;">"${b.review}"</div>`:''}
     ${b.startedAt?`<div style="font-size:11px;color:var(--txt3);margin-top:8px;">📅 Iniciado em ${new Date(b.startedAt+'T12:00:00').toLocaleDateString('pt-BR')}</div>`:''}
     ${b.finishedAt?`<div style="font-size:11px;color:var(--txt3);margin-top:4px;">✅ Lido em ${new Date((b.finishedAt+'T12:00:00').substring(0,19)).toLocaleDateString('pt-BR')}</div>`:''}
-    <button class="btn bg2 bs" style="width:100%;justify-content:center;margin-top:14px;" onclick="openFindings(${id})">📌 Achados / Previsões</button>
     <div style="margin-top:14px;">
       <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📅 Histórico de check-ins</div>
       <div id="bdet-checkins"></div>
@@ -299,7 +298,7 @@ function showBookDetail(id){
   document.getElementById('bdet-actions').innerHTML=`
     <button class="btn bg2 bs" onclick="closeModal('mod-bdet')">Fechar</button>
     <button class="btn bg2 bs" onclick="editBook(${id})">✏️ Editar</button>
-    <button class="btn bp" onclick="openProg(${id})">Atualizar</button>
+    <button class="btn bp" onclick="closeModal('mod-bdet');openProg(${id})">Atualizar</button>
     <button class="btn bd bs" onclick="delBook(${id})">🗑️</button>
   `;
   openModal('mod-bdet');
@@ -391,7 +390,7 @@ function renderInicio(){
   const il=document.getElementById('i-lendo');
   il.innerHTML=lendo.length?lendo.map(b=>`
     <div class="lc" style="margin-bottom:8px;">
-      <div class="lth">${b.cover?`<img src="${b.cover}">`:`<div style="width:100%;height:100%;background:var(--li-l);display:flex;align-items:center;justify-content:center;font-size:16px;">${fmtE(b.format)}</div>`}</div>
+      <div class="lth" style="cursor:pointer;" onclick="openProg(${b.id})">${b.cover?`<img src="${b.cover}">`:`<div style="width:100%;height:100%;background:var(--li-l);display:flex;align-items:center;justify-content:center;font-size:16px;">${fmtE(b.format)}</div>`}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.title}</div>
         ${b.pages?`<div class="pw" style="margin-top:4px;"><div class="pb" style="width:${Math.min(100,Math.round(b.read/b.pages*100))}%;background:var(--te)"></div></div><div style="font-size:10px;color:var(--txt3);margin-top:2px;">${Math.round(b.read/b.pages*100)}%</div>`:''}
