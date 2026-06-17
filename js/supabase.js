@@ -120,6 +120,7 @@ async function _handleLogin(user) {
   await _loadCloudData();
   if (typeof migrateMetas === 'function') migrateMetas();
   if (typeof syncMetasLivros === 'function') syncMetasLivros();
+  if (typeof migrateGenres  === 'function') migrateGenres();
   _patchDB();
   _hideScreens();
   if (typeof updateProfileUI === 'function') updateProfileUI();

@@ -27,8 +27,24 @@ function updateProfileUI(){
 // ════════════════════════════════════════════════════════
 function fmtE(f){return{fisico:'📗',pdf:'📄',kindle:'📱',wattpad:'🌐'}[f]||'📚';}
 
+// ─── GENRE TAGS ──────────────────────────────────────────
+let _bookGenres=[];
+const _genreBadgeColors=['bv','bt2','bam','bsk','bmi','bco'];
+function _renderGenreTags(){
+  const c=document.getElementById('b-genre-tags');if(!c)return;
+  c.innerHTML=_bookGenres.map((g,i)=>`<span class="bdg ${_genreBadgeColors[i%_genreBadgeColors.length]}" style="cursor:default;">${escapeHTML(g)}<button type="button" onclick="_removeGenreTag(${i})" style="background:none;border:none;color:inherit;font-size:10px;cursor:pointer;margin-left:4px;padding:0;line-height:1;opacity:.7;">✕</button></span>`).join('');
+}
+function addGenreTag(){
+  const inp=document.getElementById('b-genre-inp');
+  const v=inp.value.trim();
+  if(v&&!_bookGenres.includes(v)){_bookGenres.push(v);_renderGenreTags();}
+  inp.value='';inp.focus();
+}
+function _removeGenreTag(i){_bookGenres.splice(i,1);_renderGenreTags();}
+
 function openAddBook(status){
-  ['b-title','b-author','b-genre','b-read','b-rating','b-tags','b-review'].forEach(i=>document.getElementById(i).value='');
+  ['b-title','b-author','b-read','b-rating','b-tags','b-review'].forEach(i=>document.getElementById(i).value='');
+  _bookGenres=[];_renderGenreTags();
   document.getElementById('b-pages').value='';
   if(status)document.getElementById('b-status').value=status;
   const p=document.getElementById('b-cov-prev');p.src='';p.style.display='none';
@@ -49,7 +65,7 @@ async function saveBook(){
         ...old,
         title:document.getElementById('b-title').value,
         author:document.getElementById('b-author').value,
-        genre:document.getElementById('b-genre').value,
+        genres:_bookGenres.slice(),
         pages:parseInt(document.getElementById('b-pages').value)||old.pages,
         read:parseInt(document.getElementById('b-read').value)||old.read,
         format:document.getElementById('b-fmt').value,
@@ -66,7 +82,7 @@ async function saveBook(){
   } else {
     const b={
       id:Date.now(),title:document.getElementById('b-title').value,
-      author:document.getElementById('b-author').value,genre:document.getElementById('b-genre').value,
+      author:document.getElementById('b-author').value,genres:_bookGenres.slice(),
       pages:parseInt(document.getElementById('b-pages').value)||0,
       read:parseInt(document.getElementById('b-read').value)||0,
       format:document.getElementById('b-fmt').value,status:document.getElementById('b-status').value,
@@ -252,7 +268,7 @@ function editBook(id){
   closeModal('mod-bdet');
   document.getElementById('b-title').value=b.title;
   document.getElementById('b-author').value=b.author;
-  document.getElementById('b-genre').value=b.genre||'';
+  _bookGenres=(b.genres&&b.genres.length?b.genres:b.genre?b.genre.split(',').map(g=>g.trim()).filter(Boolean):[]).slice();_renderGenreTags();
   document.getElementById('b-pages').value=b.pages||'';
   document.getElementById('b-read').value=b.read||'';
   document.getElementById('b-fmt').value=b.format;
@@ -280,7 +296,7 @@ function showBookDetail(id){
       <div style="flex:1;min-width:0;">
         <div style="font-size:17px;font-weight:700;font-family:var(--font-serif);line-height:1.2;margin-bottom:3px;">${b.title}</div>
         <div style="font-size:12px;color:var(--txt2);margin-bottom:6px;">${b.author}</div>
-        ${b.genre?`<span class="bdg bv">${b.genre}</span>`:''}
+        ${(b.genres&&b.genres.length)?b.genres.map((g,i)=>`<span class="bdg ${_genreBadgeColors[i%_genreBadgeColors.length]}">${escapeHTML(g)}</span>`).join(' '):(b.genre?`<span class="bdg bv">${escapeHTML(b.genre)}</span>`:'')}
         ${b.rating?`<div style="font-size:14px;color:var(--am);margin-top:6px;">${'⭐'.repeat(Math.round(b.rating))}</div>`:''}
       </div>
     </div>

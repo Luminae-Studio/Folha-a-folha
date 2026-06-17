@@ -53,6 +53,18 @@ function migrateMetas(){
   if(changed)sv('metas');
 }
 
+// Migração: converte b.genre (string) em b.genres (array) para livros antigos.
+function migrateGenres(){
+  var changed=false;
+  S.books.forEach(function(b){
+    if(!b.genres){
+      b.genres=b.genre?b.genre.split(',').map(function(g){return g.trim();}).filter(Boolean):[];
+      changed=true;
+    }
+  });
+  if(changed)sv('books');
+}
+
 // Apply saved theme on load
 (function(){
   if(S.theme==='dark'){
