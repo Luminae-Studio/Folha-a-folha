@@ -41,6 +41,7 @@ function addGenreTag(){
   inp.value='';inp.focus();
 }
 function _removeGenreTag(i){_bookGenres.splice(i,1);_renderGenreTags();}
+function _genreKey(e){if(e.key==='Enter'){e.preventDefault();addGenreTag();}}
 
 function openAddBook(status){
   ['b-title','b-author','b-read','b-rating','b-tags','b-review'].forEach(i=>document.getElementById(i).value='');
