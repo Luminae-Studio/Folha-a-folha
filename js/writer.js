@@ -367,13 +367,71 @@ function renderAZ(){
     </div>`).join('');
 }
 let azCurLetter='',azCurYear=rdYearN;
+const _AZ_ARTICLES=['O ','A ','As ','Os ','The ','El ','La '];
+function _stripAzArticle(t){
+  for(const p of _AZ_ARTICLES){if(t.toUpperCase().startsWith(p.toUpperCase()))return t.slice(p.length);}
+  return t;
+}
+function _azCovHtml(b,w,h){
+  return b.cover
+    ?`<img src="${escapeHTML(b.cover)}" style="width:${w}px;height:${h}px;object-fit:cover;border-radius:4px;flex-shrink:0;">`
+    :`<div style="width:${w}px;height:${h}px;background:var(--bord);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:${Math.round(h/3)}px;">📚</div>`;
+}
 function openAZModal(letter,yr){
   azCurLetter=letter;azCurYear=yr;
   document.getElementById('az-letter-show').textContent=letter;
   document.getElementById('az-book-inp').value=S.az[yr]&&S.az[yr][letter]?S.az[yr][letter]:'';
-  const lidos=S.books.filter(b=>b.status==='lido'&&b.title.toUpperCase().startsWith(letter));
-  document.getElementById('az-book-list').innerHTML=lidos.length?`<div style="font-size:11px;color:var(--txt2);margin-bottom:6px;">Seus livros lidos com "${letter}":</div>${lidos.map(b=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--bord);cursor:pointer;" onclick="document.getElementById('az-book-inp').value='${b.title.replace(/'/g,"\\'")}'}">${b.title} <span style="color:var(--txt3);">— ${b.author}</span></div>`).join('')}`:'';
+  const lidos=S.books.filter(b=>
+    b.status==='lido'&&
+    new Date(b.finishedAt||b.addedAt).getFullYear()===yr&&
+    _stripAzArticle(b.title.trim()).toUpperCase().startsWith(letter)
+  );
+  const listEl=document.getElementById('az-book-list');
+  const inpArea=document.getElementById('az-inp-area');
+  if(!lidos.length){
+    listEl.innerHTML=`<div style="font-size:11px;color:var(--txt3);margin-bottom:6px;">Nenhum livro lido com letra "${letter}" em ${yr}.</div>`;
+    inpArea.style.display='';
+  } else if(lidos.length===1){
+    const b=lidos[0];
+    listEl.innerHTML=`
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:8px;">Sugestão para ${yr}:</div>
+      <div style="display:flex;gap:10px;align-items:center;background:var(--surf2);border-radius:var(--rs);padding:8px;margin-bottom:10px;">
+        ${_azCovHtml(b,36,54)}
+        <div style="min-width:0;flex:1;">
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(b.title)}</div>
+          <div style="font-size:11px;color:var(--txt3);">${escapeHTML(b.author||'')}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn bp" style="flex:1;" data-title="${escapeHTML(b.title)}" onclick="_useAZBook(this.dataset.title)">Usar este livro</button>
+        <button class="btn bg2" style="flex:1;" onclick="_showAZManual()">Escolher outro</button>
+      </div>`;
+    inpArea.style.display='none';
+  } else {
+    listEl.innerHTML=`
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:8px;">${lidos.length} livros com "${letter}" em ${yr} — toque para usar:</div>
+      ${lidos.map(b=>`
+        <div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--bord);cursor:pointer;" data-title="${escapeHTML(b.title)}" onclick="_useAZBook(this.dataset.title)">
+          ${_azCovHtml(b,32,48)}
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(b.title)}</div>
+            <div style="font-size:11px;color:var(--txt3);">${escapeHTML(b.author||'')}</div>
+          </div>
+        </div>`).join('')}
+      <div style="margin-top:10px;text-align:center;">
+        <button class="btn bg2 bs" onclick="_showAZManual()" style="font-size:12px;">✏️ Digitar manualmente</button>
+      </div>`;
+    inpArea.style.display='none';
+  }
   openModal('mod-az');
+}
+function _useAZBook(title){
+  document.getElementById('az-book-inp').value=title;
+  saveAZ();
+}
+function _showAZManual(){
+  document.getElementById('az-inp-area').style.display='';
+  document.getElementById('az-book-inp').focus();
 }
 function saveAZ(){
   const val=document.getElementById('az-book-inp').value.trim();
@@ -384,8 +442,9 @@ function saveAZ(){
 }
 function renderRdGeneros(){
   const yr=rdYearN;if(!S.rdGenRd[yr])S.rdGenRd[yr]={};
-  S.books.filter(b=>b.status==='lido').forEach(b=>{
-    if(b.genre){const g=GENEROS_LEITURA.find(x=>x.toLowerCase()===b.genre.toLowerCase().trim());if(g&&!S.rdGenRd[yr][g])S.rdGenRd[yr][g]=true;}
+  S.books.filter(b=>b.status==='lido'&&new Date(b.finishedAt||b.addedAt).getFullYear()===yr).forEach(b=>{
+    const gs=b.genres&&b.genres.length?b.genres:(b.genre?[b.genre]:[]);
+    gs.forEach(g=>{const gn=GENEROS_LEITURA.find(x=>x.toLowerCase()===g.toLowerCase().trim());if(gn&&!S.rdGenRd[yr][gn])S.rdGenRd[yr][gn]=true;});
   });
   const el=document.getElementById('rd-generos-grid');if(!el)return;
   el.innerHTML=GENEROS_LEITURA.map(g=>`
