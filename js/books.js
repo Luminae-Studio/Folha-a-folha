@@ -8,10 +8,10 @@ function editProfile(){
   openModal('mod-profile');
 }
 async function saveProfile(){
-  const img=await readImg(document.getElementById('p-av-inp'));
+  const b64=await readImg(document.getElementById('p-av-inp'));
   S.profile.name=document.getElementById('p-name').value||S.profile.name;
   S.profile.reading=document.getElementById('p-reading').value;
-  if(img)S.profile.avatar=img;
+  if(b64)S.profile.avatar=typeof uploadAvatar==='function'?await uploadAvatar(b64):b64;
   sv('profile');updateProfileUI();closeModal('mod-profile');
 }
 function updateProfileUI(){
@@ -56,12 +56,13 @@ function openAddBook(status){
   openModal('mod-book');
 }
 async function saveBook(){
-  const cov=await readImg(document.getElementById('b-cov-inp'));
+  const b64=await readImg(document.getElementById('b-cov-inp'));
   const editId=document.getElementById('mod-book').dataset.editId;
   if(editId){
     const idx=S.books.findIndex(x=>x.id===parseInt(editId));
     if(idx>=0){
       const old=S.books[idx];
+      const cov=b64?(typeof uploadCover==='function'?await uploadCover(b64,old.id):b64):old.cover;
       S.books[idx]={
         ...old,
         title:document.getElementById('b-title').value,
@@ -74,15 +75,17 @@ async function saveBook(){
         rating:parseFloat(document.getElementById('b-rating').value)||old.rating,
         tags:document.getElementById('b-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
         review:document.getElementById('b-review').value,
-        cover:cov||old.cover,
+        cover:cov,
         finishedAt:document.getElementById('b-finished')?.value||(document.getElementById('b-status').value==='lido'?(old.finishedAt||''):''),
         startedAt:document.getElementById('b-started')?.value||old.startedAt||'',
       };
     }
     delete document.getElementById('mod-book').dataset.editId;
   } else {
+    const newId=Date.now();
+    const cov=b64?(typeof uploadCover==='function'?await uploadCover(b64,newId):b64):'';
     const b={
-      id:Date.now(),title:document.getElementById('b-title').value,
+      id:newId,title:document.getElementById('b-title').value,
       author:document.getElementById('b-author').value,genres:_bookGenres.slice(),
       pages:parseInt(document.getElementById('b-pages').value)||0,
       read:parseInt(document.getElementById('b-read').value)||0,

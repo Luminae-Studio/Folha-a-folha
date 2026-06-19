@@ -128,6 +128,9 @@ async function _handleLogin(user) {
   if (typeof checkAlbum      === 'function') checkAlbum();
   const diEl = document.getElementById('di-d');
   if (diEl) diEl.value = new Date().toISOString().split('T')[0];
+  // Migração de capas em background — não bloqueia a tela inicial
+  if (typeof migrateCoversToStorage === 'function')
+    migrateCoversToStorage().catch(e => console.warn('migrateCoversToStorage:', e));
 }
 
 // ── Chaves sincronizadas ──────────────────────────────────
@@ -281,4 +284,53 @@ async function getFindingThread(findingId) {
     if (repliesRes.error) console.warn('getFindingThread replies:', repliesRes.error.message);
     return { root: rootRes.data || null, replies: repliesRes.data || [] };
   } catch(e) { console.warn('getFindingThread error', e); return { root: null, replies: [] }; }
+}
+
+// ════════════════════════════════════════════════════════
+// STORAGE — Capas e avatars
+// ════════════════════════════════════════════════════════
+function _b64toBlob(b64){
+  const parts=b64.split(',');
+  const mime=(parts[0].match(/:(.*?);/)||[])[1]||'image/jpeg';
+  const bin=atob(parts[1]);
+  const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+
+async function uploadCover(b64,bookId){
+  if(!_user||!b64||!b64.startsWith('data:image'))return b64;
+  try{
+    const path=`${_user.id}/cover_${bookId}.jpg`;
+    const{error}=await getSB().storage.from('covers').upload(path,_b64toBlob(b64),{contentType:'image/jpeg',upsert:true});
+    if(error){console.warn('uploadCover:',error.message);return b64;}
+    return getSB().storage.from('covers').getPublicUrl(path).data.publicUrl;
+  }catch(e){console.warn('uploadCover error',e);return b64;}
+}
+
+async function uploadAvatar(b64){
+  if(!_user||!b64||!b64.startsWith('data:image'))return b64;
+  try{
+    const path=`${_user.id}/avatar.jpg`;
+    const{error}=await getSB().storage.from('covers').upload(path,_b64toBlob(b64),{contentType:'image/jpeg',upsert:true});
+    if(error){console.warn('uploadAvatar:',error.message);return b64;}
+    return getSB().storage.from('covers').getPublicUrl(path).data.publicUrl;
+  }catch(e){console.warn('uploadAvatar error',e);return b64;}
+}
+
+async function migrateCoversToStorage(){
+  if(!_user)return;
+  const pending=S.books.filter(b=>b.cover&&b.cover.startsWith('data:image'));
+  const avatarPending=S.profile.avatar&&S.profile.avatar.startsWith('data:image');
+  if(!pending.length&&!avatarPending)return;
+  let booksChanged=false;
+  for(const b of pending){
+    const url=await uploadCover(b.cover,b.id);
+    if(url&&!url.startsWith('data:image')){b.cover=url;booksChanged=true;}
+  }
+  if(booksChanged)sv('books');
+  if(avatarPending){
+    const url=await uploadAvatar(S.profile.avatar);
+    if(url&&!url.startsWith('data:image')){S.profile.avatar=url;sv('profile');}
+  }
 }
