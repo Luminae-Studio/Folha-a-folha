@@ -360,11 +360,14 @@ function renderAZ(){
   document.getElementById('az-count').textContent=`${done}/26 letras`;
   document.getElementById('az-pct').textContent=Math.round(done/26*100)+'%';
   document.getElementById('az-bar').style.width=Math.round(done/26*100)+'%';
-  document.getElementById('az-grid').innerHTML=ALPHA.map(l=>`
-    <div class="az-cell${S.az[yr][l]?' done':''}" onclick="openAZModal('${l}',${yr})">
-      <div class="azl">${l}</div>
-      ${S.az[yr][l]?`<div class="azt">${S.az[yr][l]}</div>`:''}
-    </div>`).join('');
+  document.getElementById('az-grid').innerHTML=ALPHA.map(l=>{
+    const title=S.az[yr][l];
+    if(!title)return`<div class="az-cell" onclick="openAZModal('${l}',${yr})"><div class="azl">${l}</div></div>`;
+    const book=S.books.find(b=>b.title===title);
+    const cov=book&&book.cover;
+    if(cov)return`<div class="az-cell done has-cov" onclick="openAZModal('${l}',${yr})"><img class="az-cov" src="${escapeHTML(cov)}"><div class="az-cell-ov"><div class="azl">${l}</div><div class="azt">${escapeHTML(title)}</div></div></div>`;
+    return`<div class="az-cell done" onclick="openAZModal('${l}',${yr})"><div class="azl">${l}</div><div class="azt">${escapeHTML(title)}</div></div>`;
+  }).join('');
 }
 let azCurLetter='',azCurYear=rdYearN;
 const _AZ_ARTICLES=['O ','A ','As ','Os ','The ','El ','La '];
