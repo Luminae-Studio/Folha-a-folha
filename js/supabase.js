@@ -279,6 +279,17 @@ async function getFindingsWithReplies(bookId) {
   } catch(e) { console.warn('getFindingsWithReplies error', e); return []; }
 }
 
+async function updateFindingOutcome(replyId, outcome) {
+  try {
+    const { error } = await getSB()
+      .from('book_findings')
+      .update({ outcome: outcome || null })
+      .eq('id', replyId);
+    if (error) console.warn('updateFindingOutcome:', error.message);
+    return !error;
+  } catch(e) { console.warn('updateFindingOutcome error', e); return false; }
+}
+
 async function addFindingReply(parentId, bookId, page, content, outcome) {
   try {
     const { error } = await getSB().from('book_findings').insert({

@@ -277,8 +277,25 @@ async function renderFindingThread(findingId){
           </div>
           <span>${fmtCheckinDate(r.created_at)}</span>
         </div>
-        <div style="font-size:13px;line-height:1.5;">${escapeHTML(r.content)}</div>
+        <div style="font-size:13px;line-height:1.5;margin-bottom:8px;">${escapeHTML(r.content)}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="outcome-sel-${r.id}" style="flex:1;padding:6px 8px;border:1.5px solid var(--bord);border-radius:var(--rs);background:var(--surf2);color:var(--txt);font-size:12px;">
+            <option value="">— sem julgamento</option>
+            <option value="acertei"${r.outcome==='acertei'?' selected':''}>✓ Acertei</option>
+            <option value="errei"${r.outcome==='errei'?' selected':''}>✗ Errei</option>
+            <option value="parcial"${r.outcome==='parcial'?' selected':''}>🤔 Parcialmente</option>
+          </select>
+          <button class="btn bp bx" onclick="saveOutcome('${r.id}','${findingId}')" style="font-size:11px;white-space:nowrap;padding:6px 12px;">Salvar</button>
+        </div>
       </div>`).join(''):'<div style="font-size:11px;color:var(--txt3);">Nenhuma resposta ainda.</div>'}`;
+}
+async function saveOutcome(replyId, findingId){
+  const sel=document.getElementById('outcome-sel-'+replyId);
+  if(!sel)return;
+  await updateFindingOutcome(replyId, sel.value||null);
+  await renderFindingThread(findingId);
+  const bId=parseInt(document.getElementById('mod-finding-thread').dataset.bookId);
+  if(bId)renderFindingsList(bId);
 }
 async function saveFindingReply(){
   const findingId=document.getElementById('mod-finding-thread').dataset.findingId;
