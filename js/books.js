@@ -190,23 +190,40 @@ async function openFindings(bookId){
   await renderFindingsList(bookId);
   openModal('mod-findings');
 }
+function _outcomePill(outcome){
+  if(!outcome)return'';
+  const cfg={acertei:['#16a34a','✓ Acertei'],errei:['#dc2626','✗ Errei'],parcial:['#d97706','🤔 Parcial']};
+  const[bg,label]=cfg[outcome]||[];
+  if(!bg)return'';
+  return`<span style="background:${bg};color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">${label}</span>`;
+}
 async function renderFindingsList(bookId){
   const el=document.getElementById('findings-list');
   el.innerHTML='<div style="font-size:11px;color:var(--txt3);">Carregando...</div>';
-  const rows=await getFindings(bookId);
+  const rows=await getFindingsWithReplies(bookId);
   if(!rows.length){el.innerHTML='<div class="empty"><div class="ei">🔍</div><p style="font-size:12px;">Nenhum achado registrado ainda</p></div>';return;}
-  el.innerHTML=rows.map(f=>`
-    <div class="card card-sm mb" style="cursor:pointer;" onclick="openFindingThread('${f.id}')">
+  el.innerHTML=rows.map(f=>{
+    const answered=f.replies&&f.replies.length>0;
+    const outcome=(answered?f.replies.filter(r=>r.outcome).slice(-1)[0]?.outcome:null)||null;
+    const tagHtml=f.tag?`<span class="bdg bam" style="font-size:9px;">${escapeHTML(f.tag)}</span>`:'';
+    const answeredStyle=answered?'border-left:3px solid var(--li);padding-left:10px;':'';
+    return`<div class="card card-sm mb" style="cursor:pointer;${answeredStyle}" onclick="openFindingThread('${f.id}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
-        <span class="bdg bv">pág. ${f.page!=null?f.page:'—'}</span>
-        <span style="font-size:10px;color:var(--txt3);">${fmtCheckinDate(f.created_at)}</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span class="bdg bv">pág. ${f.page!=null?f.page:'—'}</span>
+          ${tagHtml}
+          ${outcome?_outcomePill(outcome):answered?'<span style="font-size:9px;color:var(--li);font-weight:600;">↩ respondido</span>':''}
+        </div>
+        <span style="font-size:10px;color:var(--txt3);white-space:nowrap;">${fmtCheckinDate(f.created_at)}</span>
       </div>
       <div style="font-size:13px;line-height:1.5;">${escapeHTML(f.content)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function openNewFinding(){
   document.getElementById('fnd-page').value='';
   document.getElementById('fnd-content').value='';
+  document.getElementById('fnd-tag').value='';
   openModal('mod-finding-new');
 }
 async function saveNewFinding(){
@@ -214,8 +231,9 @@ async function saveNewFinding(){
   const pageVal=document.getElementById('fnd-page').value;
   const page=pageVal?parseInt(pageVal):null;
   const content=document.getElementById('fnd-content').value.trim();
+  const tag=document.getElementById('fnd-tag').value.trim()||null;
   if(!content)return;
-  await addFinding(bookId,page,content);
+  await addFinding(bookId,page,content,tag);
   closeModal('mod-finding-new');
   await renderFindingsList(bookId);
 }
@@ -225,6 +243,7 @@ async function openFindingThread(findingId){
   document.getElementById('mod-finding-thread').dataset.bookId=bookId;
   document.getElementById('fnr-page').value='';
   document.getElementById('fnr-content').value='';
+  document.getElementById('fnr-outcome').value='';
   await renderFindingThread(findingId);
   openModal('mod-finding-thread');
 }
@@ -235,11 +254,15 @@ async function renderFindingThread(findingId){
   repliesEl.innerHTML='';
   const{root,replies}=await getFindingThread(findingId);
   if(!root){rootEl.innerHTML='<div style="font-size:11px;color:var(--txt3);">Achado não encontrado.</div>';return;}
+  const tagHtml=root.tag?`<span class="bdg bam" style="font-size:9px;">${escapeHTML(root.tag)}</span>`:'';
   rootEl.innerHTML=`
     <div class="card card-sm">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
-        <span class="bdg bv">pág. ${root.page!=null?root.page:'—'}</span>
-        <span style="font-size:10px;color:var(--txt3);">${fmtCheckinDate(root.created_at)}</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span class="bdg bv">pág. ${root.page!=null?root.page:'—'}</span>
+          ${tagHtml}
+        </div>
+        <span style="font-size:10px;color:var(--txt3);white-space:nowrap;">${fmtCheckinDate(root.created_at)}</span>
       </div>
       <div style="font-size:13px;line-height:1.5;">${escapeHTML(root.content)}</div>
     </div>`;
@@ -248,7 +271,10 @@ async function renderFindingThread(findingId){
     ${replies.length?replies.map(r=>`
       <div class="diary-entry">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);margin-bottom:4px;">
-          <span style="font-weight:700;color:var(--li);">pág. ${r.page!=null?r.page:'—'}</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="font-weight:700;color:var(--li);">pág. ${r.page!=null?r.page:'—'}</span>
+            ${_outcomePill(r.outcome)}
+          </div>
           <span>${fmtCheckinDate(r.created_at)}</span>
         </div>
         <div style="font-size:13px;line-height:1.5;">${escapeHTML(r.content)}</div>
@@ -260,11 +286,16 @@ async function saveFindingReply(){
   const pageVal=document.getElementById('fnr-page').value;
   const page=pageVal?parseInt(pageVal):null;
   const content=document.getElementById('fnr-content').value.trim();
+  const outcome=document.getElementById('fnr-outcome').value||null;
   if(!content)return;
-  await addFindingReply(findingId,bookId,page,content);
+  await addFindingReply(findingId,bookId,page,content,outcome);
   document.getElementById('fnr-page').value='';
   document.getElementById('fnr-content').value='';
+  document.getElementById('fnr-outcome').value='';
   await renderFindingThread(findingId);
+  // Atualiza a lista de achados para refletir o novo status
+  const bId=parseInt(document.getElementById('mod-finding-thread').dataset.bookId);
+  if(bId)renderFindingsList(bId);
 }
 function delBook(id){S.books=S.books.filter(x=>x.id!==id);sv('books');closeModal('mod-bdet');renderPage(S.curPage);}
 function editBook(id){

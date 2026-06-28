@@ -233,14 +233,15 @@ async function getCheckins(bookId) {
 // ════════════════════════════════════════════════════════
 // ACHADOS / PREVISÕES
 // ════════════════════════════════════════════════════════
-async function addFinding(bookId, page, content) {
+async function addFinding(bookId, page, content, tag) {
   try {
     const { error } = await getSB().from('book_findings').insert({
       user_id: _user ? _user.id : null,
       book_id: bookId,
       parent_id: null,
       page: page,
-      content: content
+      content: content,
+      tag: tag || null
     });
     if (error) console.warn('addFinding:', error.message);
     return !error;
@@ -260,14 +261,33 @@ async function getFindings(bookId) {
   } catch(e) { console.warn('getFindings error', e); return []; }
 }
 
-async function addFindingReply(parentId, bookId, page, content) {
+async function getFindingsWithReplies(bookId) {
+  try {
+    const { data, error } = await getSB()
+      .from('book_findings')
+      .select('*')
+      .eq('book_id', bookId)
+      .order('created_at', { ascending: true });
+    if (error) { console.warn('getFindingsWithReplies:', error.message); return []; }
+    const all = data || [];
+    const repliesMap = {};
+    all.filter(r => r.parent_id).forEach(r => {
+      if (!repliesMap[r.parent_id]) repliesMap[r.parent_id] = [];
+      repliesMap[r.parent_id].push(r);
+    });
+    return all.filter(r => !r.parent_id).map(r => ({ ...r, replies: repliesMap[r.id] || [] }));
+  } catch(e) { console.warn('getFindingsWithReplies error', e); return []; }
+}
+
+async function addFindingReply(parentId, bookId, page, content, outcome) {
   try {
     const { error } = await getSB().from('book_findings').insert({
       user_id: _user ? _user.id : null,
       book_id: bookId,
       parent_id: parentId,
       page: page,
-      content: content
+      content: content,
+      outcome: outcome || null
     });
     if (error) console.warn('addFindingReply:', error.message);
     return !error;
