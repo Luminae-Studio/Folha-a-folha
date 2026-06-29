@@ -25,7 +25,6 @@ const S={
   rotina:   DB.get('rotina')   ||[],
   rotMeta:  DB.get('rotMeta')  ||500,
   frases:   DB.get('frases')   ||[],
-  diario:   DB.get('diario')   ||[],
   emprest:  DB.get('emprest')  ||[],
   az:       DB.get('az')       ||{},
   dcStreak: DB.get('dcStreak') ||{count:0,last:''},

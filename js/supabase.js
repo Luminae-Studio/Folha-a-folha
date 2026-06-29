@@ -126,8 +126,6 @@ async function _handleLogin(user) {
   if (typeof updateProfileUI === 'function') updateProfileUI();
   if (typeof renderInicio    === 'function') renderInicio();
   if (typeof checkAlbum      === 'function') checkAlbum();
-  const diEl = document.getElementById('di-d');
-  if (diEl) diEl.value = new Date().toISOString().split('T')[0];
   // Migração de capas em background — não bloqueia a tela inicial
   if (typeof migrateCoversToStorage === 'function')
     migrateCoversToStorage().catch(e => console.warn('migrateCoversToStorage:', e));
@@ -136,7 +134,7 @@ async function _handleLogin(user) {
 // ── Chaves sincronizadas ──────────────────────────────────
 const _SYNC_KEYS = [
   'profile','books','wishlist','study','metas','sessions','manus',
-  'concursos','pubs','ideias','rotina','rotMeta','frases','diario',
+  'concursos','pubs','ideias','rotina','rotMeta','frases',
   'emprest','az','dcStreak','dcGenWr','rdGenRd','dcSubMeta','prompts','theme'
 ];
 

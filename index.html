@@ -363,10 +363,6 @@
   <div id="frases-list"></div>
 </div>
 
-<div id="pg-diario" class="pg">
-  <div class="ph"><div><h2>Diário de Leitura</h2></div><button class="btn bp bs" onclick="openModal('mod-diario')">+</button></div>
-  <div id="diario-list" class="card"></div>
-</div>
 
 <div id="pg-emprestimos" class="pg">
   <div class="ph"><div><h2>Empréstimos</h2></div><button class="btn bp bs" onclick="openModal('mod-emp')">+</button></div>
@@ -399,7 +395,7 @@
     <button class="di" onclick="go('tempo');closeDrawer()"><span class="ico">⏱️</span>Tempo</button>
     <button class="di" onclick="go('stats');closeDrawer()"><span class="ico">📊</span>Stats</button>
     <button class="di" onclick="go('frases');closeDrawer()"><span class="ico">💬</span>Frases</button>
-    <button class="di" onclick="go('diario');closeDrawer()"><span class="ico">📓</span>Diário</button>
+
     <button class="di" onclick="go('emprestimos');closeDrawer()"><span class="ico">🤝</span>Emprest.</button>
     <button class="di" id="theme-di" onclick="toggleTheme()"><span class="ico" id="theme-ico">🌙</span>Tema</button>
     <button class="di" onclick="recompressCovers();closeDrawer()"><span class="ico">🗜️</span>Otimizar capas</button>
@@ -637,15 +633,6 @@
   </div>
 </div>
 
-<!-- Diário -->
-<div class="mov" id="mod-diario">
-  <div class="mod"><div class="mh"></div><h3>Entrada no Diário</h3>
-    <div class="fg"><label>Data</label><input type="date" id="di-d"></div>
-    <div class="fg"><label>Livro lido</label><input type="text" id="di-b" placeholder="(opcional)"></div>
-    <div class="fg"><label>Como foi sua leitura hoje?</label><textarea id="di-t" style="min-height:110px;" placeholder="Escreva livremente..."></textarea></div>
-    <div class="ma"><button class="btn bg2" onclick="closeModal('mod-diario')">Cancelar</button><button class="btn bp" onclick="saveDiario()">Salvar</button></div>
-  </div>
-</div>
 
 <!-- Empréstimo -->
 <div class="mov" id="mod-emp">

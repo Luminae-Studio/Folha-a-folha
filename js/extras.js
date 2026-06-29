@@ -408,26 +408,6 @@ function renderFrases(){
 }
 function delFrase(id){S.frases=S.frases.filter(function(x){return x.id!==id;});sv('frases');renderFrases();}
 
-// DIARIO
-function saveDiario(){
-  var d=document.getElementById('di-d').value||new Date().toISOString().split('T')[0];
-  S.diario.push({id:Date.now(),date:d,book:document.getElementById('di-b').value,text:document.getElementById('di-t').value});
-  sv('diario');closeModal('mod-diario');renderDiario();
-}
-function renderDiario(){
-  var el=document.getElementById('diario-list');
-  if(!S.diario.length){el.innerHTML='<div class="empty"><div class="ei">&#x1F4D3;</div><p>Nenhuma entrada ainda</p></div>';return;}
-  el.innerHTML=S.diario.slice().reverse().map(function(d){
-    return '<div class="diary-entry">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;">'+
-      '<div style="font-size:11px;font-weight:600;color:var(--li);">'+new Date(d.date+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'})+'</div>'+
-      '<button class="btn bx bd" onclick="delDiario('+d.id+')">&#x2715;</button></div>'+
-      (d.book?'<div style="font-size:11px;color:var(--txt2);margin-bottom:5px;">&#x1F4D6; '+d.book+'</div>':'')+
-      '<div style="font-size:13px;color:var(--txt);line-height:1.6;">'+d.text+'</div></div>';
-  }).join('');
-}
-function delDiario(id){S.diario=S.diario.filter(function(x){return x.id!==id;});sv('diario');renderDiario();}
-
 // EMPRESTIMOS
 function saveEmp(){
   S.emprest.push({id:Date.now(),book:document.getElementById('em-b').value,person:document.getElementById('em-p').value,date:document.getElementById('em-d').value,due:document.getElementById('em-dv').value,returned:false});

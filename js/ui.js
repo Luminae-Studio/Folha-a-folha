@@ -18,7 +18,7 @@ function renderPage(id){
     inicio:renderInicio,estantes:renderShelf,lendo:renderLendo,
     comprar:renderWish,estudo:renderStudy,metas:renderMetas,
     stats:renderStats,tempo:renderTempo,escritora:()=>renderWrTab(S.wrTab),
-    desafios:renderDesafios,frases:renderFrases,diario:renderDiario,
+    desafios:renderDesafios,frases:renderFrases,
     emprestimos:renderEmp,sorteio:()=>{}
   }[id]||function(){})();
 }
@@ -98,7 +98,7 @@ async function readImg(inp){
 // ════════════════════════════════════════════════════════
 function exportData(){
   const data={};
-  ['profile','books','wishlist','study','metas','sessions','manus','concursos','pubs','ideias','rotina','frases','diario','emprest','az','dcStreak','dcGenWr','rdGenRd','dcSubMeta','prompts','unlocked'].forEach(k=>{
+  ['profile','books','wishlist','study','metas','sessions','manus','concursos','pubs','ideias','rotina','frases','emprest','az','dcStreak','dcGenWr','rdGenRd','dcSubMeta','prompts','unlocked'].forEach(k=>{
     const v=DB.get(k);if(v!==null)data[k]=v;
   });
   data._exportedAt=new Date().toISOString();
@@ -116,7 +116,7 @@ function importData(inp){
   r.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
-      const keys=['profile','books','wishlist','study','metas','sessions','manus','concursos','pubs','ideias','rotina','frases','diario','emprest','az','dcStreak','dcGenWr','rdGenRd','dcSubMeta','prompts','unlocked'];
+      const keys=['profile','books','wishlist','study','metas','sessions','manus','concursos','pubs','ideias','rotina','frases','emprest','az','dcStreak','dcGenWr','rdGenRd','dcSubMeta','prompts','unlocked'];
       keys.forEach(k=>{if(data[k]!==undefined)DB.set(k,data[k]);});
       keys.forEach(k=>{if(S[k]!==undefined&&data[k]!==undefined)S[k]=data[k];});
       alert('Dados importados com sucesso! ✅');
