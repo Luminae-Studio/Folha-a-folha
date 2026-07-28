@@ -327,7 +327,10 @@ function renderTempo(){
 }
 
 // SORTEIO
+var _sortAnimating=false;
+
 function sortear(){
+  if(_sortAnimating)return;
   var fmts=[];
   if(document.getElementById('sf-f').checked)fmts.push('fisico');
   if(document.getElementById('sf-p').checked)fmts.push('pdf');
@@ -335,12 +338,49 @@ function sortear(){
   if(document.getElementById('sf-w').checked)fmts.push('wattpad');
   var pool=S.books.filter(function(b){return fmts.indexOf(b.format)>=0&&b.status==='fila';});
   var c=document.getElementById('sort-card');
-  if(!pool.length){c.innerHTML='<div style="font-size:40px;margin-bottom:10px;">&#x1F605;</div><div style="font-size:15px;font-weight:700;">Nenhum na fila!</div><div style="font-size:12px;color:var(--txt2);margin-top:6px;">Adicione livros com status "Na fila"</div>';return;}
-  var b=pool[Math.floor(Math.random()*pool.length)];
-  c.innerHTML=(b.cover?'<img src="'+b.cover+'" style="width:90px;aspect-ratio:2/3;object-fit:cover;border-radius:10px;margin:0 auto 12px;">':'<div style="font-size:48px;margin-bottom:12px;">'+fmtE(b.format)+'</div>')+
-    '<div style="font-size:18px;font-weight:700;margin-bottom:4px;">'+b.title+'</div>'+
-    '<div style="font-size:13px;color:var(--txt2);margin-bottom:10px;">'+b.author+'</div>'+
-    '<div style="font-size:11px;color:var(--txt3);">Toque novamente para outro</div>';
+  if(!pool.length){
+    c.innerHTML='<div style="font-size:40px;margin-bottom:10px;">&#x1F605;</div><div style="font-size:15px;font-weight:700;">Nenhum na fila!</div><div style="font-size:12px;color:var(--txt2);margin-top:6px;">Adicione livros com status "Na fila"</div>';
+    return;
+  }
+  var finalBook=pool[Math.floor(Math.random()*pool.length)];
+  // Fase rápida: ~18 frames × 80ms = ~1440ms; depois desaceleração
+  var fastCount=Math.ceil(1500/80);
+  var delays=[];
+  for(var i=0;i<fastCount;i++)delays.push(80);
+  delays=delays.concat([100,150,200,300,500]);
+  _sortAnimating=true;
+  _runSortCycle(pool,finalBook,delays,0,c);
+}
+
+function _sortBookFrame(b,blurred){
+  var fmtColors={fisico:'var(--mi)',pdf:'var(--li)',kindle:'var(--sk)',wattpad:'var(--am)'};
+  var blur=blurred?'filter:blur(2px);':'';
+  var imgHtml;
+  if(b.cover){
+    imgHtml='<img src="'+b.cover+'" style="width:100px;aspect-ratio:2/3;object-fit:cover;border-radius:10px;margin:0 auto 12px;display:block;'+blur+'">';
+  }else{
+    var bg=fmtColors[b.format]||'var(--li)';
+    imgHtml='<div style="width:100px;aspect-ratio:2/3;border-radius:10px;margin:0 auto 12px;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:40px;'+blur+'">'+fmtE(b.format)+'</div>';
+  }
+  return imgHtml+
+    '<div style="font-size:18px;font-weight:700;margin-bottom:4px;'+blur+'">'+escapeHTML(b.title)+'</div>'+
+    '<div style="font-size:13px;color:var(--txt2);margin-bottom:10px;'+blur+'">'+escapeHTML(b.author)+'</div>';
+}
+
+function _runSortCycle(pool,finalBook,delays,idx,c){
+  if(idx>=delays.length){
+    _sortAnimating=false;
+    c.innerHTML=_sortBookFrame(finalBook,false)+
+      '<div style="font-size:11px;color:var(--txt3);">Toque novamente para outro</div>';
+    c.classList.add('sort-pulse');
+    setTimeout(function(){c.classList.remove('sort-pulse');},700);
+    return;
+  }
+  var isLast=(idx===delays.length-1);
+  var book=isLast?finalBook:pool[Math.floor(Math.random()*pool.length)];
+  var blurred=delays[idx]<=80;
+  c.innerHTML=_sortBookFrame(book,blurred);
+  setTimeout(function(){_runSortCycle(pool,finalBook,delays,idx+1,c);},delays[idx]);
 }
 
 // STATS
