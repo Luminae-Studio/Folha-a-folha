@@ -244,6 +244,45 @@ function renderPubs(){
 function delPub(id){S.pubs=S.pubs.filter(x=>x.id!==id);sv('pubs');renderPubs();}
 
 // ─── IDEIAS ─────────────────────────────────────────────
+var _ideaBgMap={
+  lilas:'var(--li-l)',verde:'var(--te-l)',amarelo:'var(--am-l)',
+  azul:'var(--sk-l)',rosa:'var(--co-l)',menta:'var(--mi-l)',
+  // compatibilidade com ideias salvas no formato hex antigo
+  '#F3E8FF':'var(--li-l)','#CCFBF1':'var(--te-l)','#FEF3C7':'var(--am-l)',
+  '#E0F2FE':'var(--sk-l)','#FFE4E6':'var(--co-l)','#D1FAE5':'var(--mi-l)'
+};
+function _ideaBg(c){return _ideaBgMap[c]||'var(--surf2)';}
+
+var _curIdeiaId=null;
+function openIdeia(id){
+  const idea=S.ideias.find(x=>x.id===id);if(!idea)return;
+  _curIdeiaId=id;
+  document.getElementById('id-view-title').textContent=idea.title||'';
+  document.getElementById('id-view-content').textContent=idea.content||'';
+  document.getElementById('id-view-genre').innerHTML=idea.genre?`<span class="tag">${escapeHTML(idea.genre)}</span>`:'';
+  document.getElementById('id-view-bar').style.background=_ideaBg(idea.color);
+  document.getElementById('id-view-copy').textContent='📋 Copiar';
+  openModal('mod-id-view');
+}
+function copyIdeia(){
+  const idea=S.ideias.find(x=>x.id===_curIdeiaId);if(!idea)return;
+  const text=(idea.title?idea.title+'\n\n':'')+(idea.content||'');
+  const btn=document.getElementById('id-view-copy');
+  const done=()=>{btn.textContent='✓ Copiado!';setTimeout(()=>{btn.textContent='📋 Copiar';},2000);};
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(done).catch(()=>{});
+  }else{
+    const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0;';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);done();
+  }
+}
+function _delIdeiaAndClose(){
+  if(!_curIdeiaId)return;
+  closeModal('mod-id-view');
+  delId(_curIdeiaId);
+  _curIdeiaId=null;
+}
+
 function saveIdeia(){
   S.ideias.push({id:Date.now(),title:document.getElementById('id-t').value,content:document.getElementById('id-c').value,genre:document.getElementById('id-g').value,color:document.getElementById('id-cor').value,createdAt:new Date().toISOString()});
   sv('ideias');closeModal('mod-id');renderIdeias();
@@ -252,10 +291,13 @@ function renderIdeias(){
   const el=document.getElementById('id-list');if(!el)return;
   if(!S.ideias.length){el.innerHTML='<div class="empty"><div class="ei">💡</div><p>Nenhuma ideia</p></div>';return;}
   el.innerHTML=[...S.ideias].reverse().map(i=>`
-    <div style="background:${i.color};border-radius:var(--rs);padding:12px;margin-bottom:8px;border:1px solid transparent;">
-      <div style="display:flex;justify-content:space-between;"><div style="font-size:13px;font-weight:700;margin-bottom:5px;">${i.title}</div><button class="btn bx" style="background:rgba(0,0,0,.1);" onclick="delId(${i.id})">✕</button></div>
-      <div style="font-size:12px;line-height:1.6;color:var(--txt);">${i.content}</div>
-      ${i.genre?`<div style="margin-top:6px;"><span class="tag">${i.genre}</span></div>`:''}
+    <div style="background:${_ideaBg(i.color)};border-radius:var(--rs);padding:12px;margin-bottom:8px;cursor:pointer;" onclick="openIdeia(${i.id})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:5px;color:var(--txt);">${escapeHTML(i.title)}</div>
+        <button class="btn bx" style="background:rgba(0,0,0,.12);flex-shrink:0;" onclick="event.stopPropagation();delId(${i.id})">✕</button>
+      </div>
+      <div style="font-size:12px;line-height:1.6;color:var(--txt2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${escapeHTML(i.content)}</div>
+      ${i.genre?`<div style="margin-top:6px;"><span class="tag">${escapeHTML(i.genre)}</span></div>`:''}
     </div>`).join('');
 }
 function delId(id){S.ideias=S.ideias.filter(x=>x.id!==id);sv('ideias');renderIdeias();}

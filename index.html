@@ -614,9 +614,24 @@
     <div class="fg"><label>A ideia</label><textarea id="id-c" style="min-height:100px;"></textarea></div>
     <div class="fr">
       <div class="fg"><label>Gênero</label><input type="text" id="id-g"></div>
-      <div class="fg"><label>Cor</label><select id="id-cor"><option value="#F3E8FF">Lilás</option><option value="#CCFBF1">Verde água</option><option value="#FEF3C7">Amarelo</option><option value="#E0F2FE">Azul</option><option value="#FFE4E6">Rosa</option><option value="#D1FAE5">Menta</option></select></div>
+      <div class="fg"><label>Cor</label><select id="id-cor"><option value="lilas">Lilás</option><option value="verde">Verde água</option><option value="amarelo">Amarelo</option><option value="azul">Azul</option><option value="rosa">Rosa</option><option value="menta">Menta</option></select></div>
     </div>
     <div class="ma"><button class="btn bg2" onclick="closeModal('mod-id')">Cancelar</button><button class="btn bp" onclick="saveIdeia()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Ideia — visualizar -->
+<div class="mov" id="mod-id-view">
+  <div class="mod"><div class="mh"></div>
+    <div id="id-view-bar" style="height:4px;border-radius:4px;margin:-4px 0 14px;"></div>
+    <h3 id="id-view-title" style="margin-bottom:10px;word-break:break-word;"></h3>
+    <div id="id-view-content" style="font-size:13px;line-height:1.7;color:var(--txt2);white-space:pre-wrap;word-break:break-word;margin-bottom:10px;"></div>
+    <div id="id-view-genre"></div>
+    <div class="ma" style="margin-top:16px;">
+      <button class="btn bg2" onclick="closeModal('mod-id-view')">Fechar</button>
+      <button class="btn bg2" id="id-view-copy" onclick="copyIdeia()">📋 Copiar</button>
+      <button class="btn bx" onclick="_delIdeiaAndClose()">🗑 Excluir</button>
+    </div>
   </div>
 </div>
 
