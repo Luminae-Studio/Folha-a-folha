@@ -362,6 +362,7 @@ function showBookDetail(id){
       <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📅 Histórico de check-ins</div>
       <div id="bdet-checkins"></div>
     </div>
+    <button class="btn bg2 bs" style="width:100%;margin-top:12px;justify-content:center;" onclick="closeModal('mod-bdet');openFindings(${id})">📌 Achados / Previsões</button>
   `;
   document.getElementById('bdet-actions').innerHTML=`
     <button class="btn bg2 bs" onclick="closeModal('mod-bdet')">Fechar</button>
